@@ -37,10 +37,12 @@ async function main() {
     ceremonyAddress: "Place Général Leclerc, 69006 Lyon",
     ceremonyCoords: "45.77405,4.85228",
 
+    // Réception au même endroit que la cérémonie laïque : la page invité
+    // fusionne alors les deux en un seul bloc, avec une seule carte.
     cocktailTime: "17h00",
-    receptionPlace: "Domaine des Oliviers",
-    receptionAddress: "120 chemin des Vignes, 69000 Lyon",
-    receptionCoords: "45.75800,4.83200",
+    receptionPlace: "Parc de la Tête d'Or",
+    receptionAddress: "Place Général Leclerc, 69006 Lyon",
+    receptionCoords: "45.77405,4.85228",
 
     rsvpDeadline: "2027-04-30",
     contactEmail: "louise.et.julien@example.com",
@@ -57,7 +59,7 @@ async function main() {
   const infos = [
     {
       title: "Le programme de la journée",
-      body: "11h00 — Passage en mairie, pour celles et ceux qui souhaitent en être.\n15h00 — Cérémonie laïque au parc de la Tête d'Or.\n17h00 — Vin d'honneur au Domaine des Oliviers.\n20h00 — Dîner puis soirée dansante.\n\nLe domaine est à 15 minutes du parc, un fléchage sera installé.",
+      body: "11h00 — Passage en mairie, pour celles et ceux qui souhaitent en être.\n15h00 — Cérémonie laïque au parc de la Tête d'Or.\n17h00 — Vin d'honneur, sur place.\n20h00 — Dîner puis soirée dansante, toujours sur place.\n\nUn fléchage sera installé depuis l'entrée du parc.",
       audience: "ALL",
       published: true,
       pinned: true,
@@ -65,7 +67,7 @@ async function main() {
     },
     {
       title: "Où dormir ?",
-      body: "Nous avons pré-réservé une dizaine de chambres à l'Hôtel du Parc, à 10 minutes du domaine.\n\nMentionne « mariage Louise & Julien » en réservant pour bénéficier du tarif négocié, avant le 1er juin.",
+      body: "Nous avons pré-réservé une dizaine de chambres à l'Hôtel du Parc, à 10 minutes à pied.\n\nMentionne « mariage Louise & Julien » en réservant pour bénéficier du tarif négocié, avant le 1er juin.",
       audience: "FULL",
       published: true,
       pinned: false,

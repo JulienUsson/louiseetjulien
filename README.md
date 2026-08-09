@@ -80,15 +80,37 @@ back-office, lui, s'adresse aux mariés.
 
 ## Créer les invités
 
-Trois façons, toutes dans `/admin/invites` :
+Deux façons, toutes deux dans `/admin/invites` :
 
 1. **Un par un** — bouton « Ajouter un invité ». L'email est facultatif.
 2. **En masse** — bouton « Importer une liste », une ligne par invité :
    `Prénom;Nom;FULL ou COCKTAIL;accompagnants;email`. Seuls le prénom et le nom
    sont obligatoires ; les séparateurs `;`, `,` et tabulation sont acceptés, ce
    qui permet de coller directement depuis un tableur.
-3. **Envoi groupé** — bouton « Envoyer les invitations en attente » : écrit à
-   tous les invités qui ont un email et n'ont jamais reçu leur lien.
+
+Les deux proposent d'**envoyer l'invitation dans la foulée**, si une adresse
+email est renseignée. La case est cochée par défaut à la création, décochée à
+l'import — coller cent lignes ne doit pas déclencher cent envois par
+inadvertance. Si l'envoi échoue, l'invité est créé quand même et l'erreur est
+affichée : une panne SMTP ne fait pas perdre la saisie.
+
+## Transmettre son lien à un invité
+
+Chaque ligne de la liste offre quatre actions :
+
+| Action              | Usage                                                     |
+| ------------------- | --------------------------------------------------------- |
+| **Lien**            | Copie l'URL seule                                          |
+| **Message**         | Copie une invitation complète, prête à coller en SMS       |
+| **Prévisualiser**   | Ouvre la page telle que l'invité la voit                    |
+| **Fiche**           | Ouvre la fiche d'administration                             |
+
+« Message » est le chemin principal au démarrage : comme ce sont les invités
+qui renseignent leur email depuis leur lien, presque personne n'en a en base au
+début, et l'envoi par email ne peut atteindre qu'une poignée de gens.
+
+Depuis la fiche d'un invité, « Envoyer par email » (re)transmet le lien dès
+qu'une adresse est connue — utile pour ceux créés sans email.
 
 Chaque invitation reçoit un code de 10 caractères tiré au sort dans un alphabet
 sans caractères ambigus (pas de `0`/`O`, ni de `1`/`I`/`L`), pour rester
@@ -103,9 +125,10 @@ L'envoi est actif dès que `SMTP_HOST` est renseigné. Sans configuration SMTP,
 l'application fonctionne normalement mais aucun email ne part : chaque
 tentative est journalisée dans `/admin/emails` avec sa raison d'échec.
 
-Quatre types d'envois : le lien d'invitation (individuel ou groupé), la
-diffusion d'une information publiée, un message libre ciblé, et un email de
-test pour valider la configuration avant la première vraie campagne.
+Quatre types d'envois : le lien d'invitation (à la création de l'invité, à
+l'import, ou depuis sa fiche), la diffusion d'une information publiée, un
+message libre ciblé, et un email de test pour valider la configuration avant la
+première vraie campagne.
 
 Le message libre se compose depuis `/admin/emails` et se cible par formule et
 par état de réponse — pour relancer les silencieux, ou n'écrire qu'aux

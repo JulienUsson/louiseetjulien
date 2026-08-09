@@ -11,6 +11,7 @@ import {
   type GuestInput,
 } from "@/app/admin/actions";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -65,7 +66,12 @@ export function GuestDialog({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [values, setValues] = useState<GuestFormValues>(guest ?? EMPTY);
+  const [sendInvitation, setSendInvitation] = useState(true);
   const [pending, startTransition] = useTransition();
+
+  // Rien à envoyer sans adresse, et on ne renvoie pas d'invitation depuis une
+  // simple modification de fiche.
+  const canSendInvitation = !guest && values.email.trim().length > 0;
 
   const set = <K extends keyof GuestFormValues>(
     key: K,
@@ -79,14 +85,16 @@ export function GuestDialog({
       const payload: GuestInput = values;
       const result = guest
         ? await updateGuest(guest.id, payload)
-        : await createGuest(payload);
+        : await createGuest(payload, canSendInvitation && sendInvitation);
 
       if (!result.ok) {
         toast.error(result.error ?? "Enregistrement impossible.");
         return;
       }
 
-      toast.success(guest ? "Invité mis à jour." : "Invité créé.");
+      toast.success(
+        result.message ?? (guest ? "Invité mis à jour." : "Invité créé."),
+      );
       setOpen(false);
       if (!guest) setValues(EMPTY);
       router.refresh();
@@ -208,6 +216,33 @@ export function GuestDialog({
                 placeholder="Jamais affiché à l'invité."
               />
             </div>
+
+            {!guest && (
+              <div className="flex items-start gap-3 rounded-lg border bg-muted/40 p-4">
+                <Checkbox
+                  id="sendInvitation"
+                  checked={canSendInvitation && sendInvitation}
+                  disabled={!canSendInvitation}
+                  onCheckedChange={(checked) =>
+                    setSendInvitation(checked === true)
+                  }
+                  className="mt-0.5"
+                />
+                <div>
+                  <Label
+                    htmlFor="sendInvitation"
+                    className="font-normal data-[disabled]:opacity-60"
+                  >
+                    Envoyer l&apos;invitation par email tout de suite
+                  </Label>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {canSendInvitation
+                      ? "Le lien personnel part dès la création."
+                      : "Renseignez une adresse email pour pouvoir l'envoyer. Sinon, utilisez « Copier le message » pour l'envoyer par SMS."}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           <DialogFooter>
