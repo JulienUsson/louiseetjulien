@@ -9,7 +9,7 @@
   # env.GREET = "devenv";
 
   # https://devenv.sh/packages/
-  packages = with pkgs; [alejandra git pnpm];
+  packages = with pkgs; [alejandra git pnpm nodejs_22 sqlite];
 
   # https://devenv.sh/languages/
   # languages.rust.enable = true;

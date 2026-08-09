@@ -1,0 +1,251 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Thème « Louise & Julien » : orange & rose.
+ * Le primaire est un rose profond, l'accent un orange chaud, et les fonds
+ * tirent vers la crème pour rester lisibles sur une invitation imprimée.
+ */
+:root {
+  --radius: 0.75rem;
+
+  --background: oklch(0.995 0.008 60);
+  --foreground: oklch(0.27 0.03 25);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.27 0.03 25);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.27 0.03 25);
+
+  /* rose 600 */
+  --primary: oklch(0.59 0.2 12);
+  --primary-foreground: oklch(0.99 0.01 60);
+
+  /* orange très clair */
+  --secondary: oklch(0.96 0.03 70);
+  --secondary-foreground: oklch(0.42 0.11 45);
+
+  --muted: oklch(0.96 0.015 60);
+  --muted-foreground: oklch(0.53 0.04 35);
+
+  /* orange 500 */
+  --accent: oklch(0.95 0.05 65);
+  --accent-foreground: oklch(0.45 0.14 45);
+
+  --destructive: oklch(0.58 0.22 27);
+  --destructive-foreground: oklch(0.99 0.01 60);
+
+  --border: oklch(0.91 0.02 55);
+  --input: oklch(0.91 0.02 55);
+  --ring: oklch(0.59 0.2 12);
+
+  /* Couleurs de marque réutilisables hors composants shadcn. */
+  --brand-rose: oklch(0.59 0.2 12);
+  --brand-orange: oklch(0.72 0.17 55);
+
+  --chart-1: oklch(0.59 0.2 12);
+  --chart-2: oklch(0.72 0.17 55);
+  --chart-3: oklch(0.68 0.14 25);
+  --chart-4: oklch(0.8 0.12 70);
+  --chart-5: oklch(0.5 0.16 5);
+
+  --sidebar: oklch(0.985 0.012 60);
+  --sidebar-foreground: oklch(0.27 0.03 25);
+  --sidebar-primary: oklch(0.59 0.2 12);
+  --sidebar-primary-foreground: oklch(0.99 0.01 60);
+  --sidebar-accent: oklch(0.95 0.04 65);
+  --sidebar-accent-foreground: oklch(0.45 0.14 45);
+  --sidebar-border: oklch(0.91 0.02 55);
+  --sidebar-ring: oklch(0.59 0.2 12);
+}
+
+.dark {
+  --background: oklch(0.19 0.02 25);
+  --foreground: oklch(0.96 0.01 60);
+
+  --card: oklch(0.24 0.025 25);
+  --card-foreground: oklch(0.96 0.01 60);
+  --popover: oklch(0.24 0.025 25);
+  --popover-foreground: oklch(0.96 0.01 60);
+
+  --primary: oklch(0.7 0.17 12);
+  --primary-foreground: oklch(0.19 0.02 25);
+
+  --secondary: oklch(0.3 0.04 40);
+  --secondary-foreground: oklch(0.96 0.01 60);
+
+  --muted: oklch(0.29 0.03 30);
+  --muted-foreground: oklch(0.73 0.03 45);
+
+  --accent: oklch(0.32 0.06 50);
+  --accent-foreground: oklch(0.96 0.01 60);
+
+  --destructive: oklch(0.65 0.2 27);
+  --destructive-foreground: oklch(0.96 0.01 60);
+
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 18%);
+  --ring: oklch(0.7 0.17 12);
+
+  --brand-rose: oklch(0.7 0.17 12);
+  --brand-orange: oklch(0.78 0.15 55);
+
+  --chart-1: oklch(0.7 0.17 12);
+  --chart-2: oklch(0.78 0.15 55);
+  --chart-3: oklch(0.74 0.13 25);
+  --chart-4: oklch(0.84 0.11 70);
+  --chart-5: oklch(0.6 0.15 5);
+
+  --sidebar: oklch(0.24 0.025 25);
+  --sidebar-foreground: oklch(0.96 0.01 60);
+  --sidebar-primary: oklch(0.7 0.17 12);
+  --sidebar-primary-foreground: oklch(0.19 0.02 25);
+  --sidebar-accent: oklch(0.32 0.06 50);
+  --sidebar-accent-foreground: oklch(0.96 0.01 60);
+  --sidebar-border: oklch(1 0 0 / 12%);
+  --sidebar-ring: oklch(0.7 0.17 12);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-brand-rose: var(--brand-rose);
+  --color-brand-orange: var(--brand-orange);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --font-sans: var(--font-body);
+  --font-serif: var(--font-display);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Dégradé de fond partagé par les pages invité. */
+@utility bg-wedding {
+  background-image: linear-gradient(
+    to bottom right,
+    color-mix(in oklch, var(--brand-rose) 8%, var(--background)),
+    var(--background) 45%,
+    color-mix(in oklch, var(--brand-orange) 12%, var(--background))
+  );
+}
+
+/* --- Animations de l'enveloppe (reprises de la SPA) --- */
+@keyframes wiggle {
+  0%,
+  80% {
+    transform: rotate(0deg);
+  }
+  82% {
+    transform: rotate(-2deg);
+  }
+  84% {
+    transform: rotate(2deg);
+  }
+  86% {
+    transform: rotate(-2deg);
+  }
+  88% {
+    transform: rotate(2deg);
+  }
+  90% {
+    transform: rotate(-1deg);
+  }
+  92% {
+    transform: rotate(1deg);
+  }
+  94%,
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  10% {
+    transform: translateX(-8px) rotate(-3deg);
+  }
+  20% {
+    transform: translateX(8px) rotate(3deg);
+  }
+  30% {
+    transform: translateX(-10px) rotate(-4deg);
+  }
+  40% {
+    transform: translateX(10px) rotate(4deg);
+  }
+  50% {
+    transform: translateX(-8px) rotate(-3deg);
+  }
+  60% {
+    transform: translateX(8px) rotate(3deg);
+  }
+  70% {
+    transform: translateX(-6px) rotate(-2deg);
+  }
+  80% {
+    transform: translateX(6px) rotate(2deg);
+  }
+  90% {
+    transform: translateX(-1px) rotate(0deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
