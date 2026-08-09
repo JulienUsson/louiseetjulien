@@ -7,6 +7,8 @@ import { toast } from "sonner";
 
 import { importGuests } from "@/app/admin/actions";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -27,7 +29,14 @@ export function GuestImportDialog() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [raw, setRaw] = useState("");
+  const [sendInvitations, setSendInvitations] = useState(false);
   const [pending, startTransition] = useTransition();
+
+  // Compte les lignes qui portent une adresse email, cinquième colonne.
+  const withEmail = raw
+    .split("\n")
+    .map((line) => line.split(/[;\t,]/)[4]?.trim())
+    .filter((email) => Boolean(email) && email!.includes("@")).length;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -60,12 +69,32 @@ export function GuestImportDialog() {
           className="font-mono text-xs"
         />
 
+        <div className="flex items-start gap-3 rounded-lg border bg-muted/40 p-4">
+          <Checkbox
+            id="sendInvitations"
+            checked={sendInvitations}
+            disabled={withEmail === 0}
+            onCheckedChange={(checked) => setSendInvitations(checked === true)}
+            className="mt-0.5"
+          />
+          <div>
+            <Label htmlFor="sendInvitations" className="font-normal">
+              Envoyer les invitations tout de suite
+            </Label>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {withEmail > 0
+                ? `${withEmail} ligne(s) portent une adresse email et recevront leur lien.`
+                : "Aucune ligne ne porte d'adresse email pour l'instant."}
+            </p>
+          </div>
+        </div>
+
         <DialogFooter>
           <Button
             disabled={pending || !raw.trim()}
             onClick={() =>
               startTransition(async () => {
-                const result = await importGuests(raw);
+                const result = await importGuests(raw, sendInvitations);
                 if (!result.ok) {
                   toast.error(result.error ?? "Import impossible.");
                   return;

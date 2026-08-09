@@ -63,14 +63,17 @@ const guestSchema = z.object({
 
 export type GuestInput = z.input<typeof guestSchema>;
 
-export async function createGuest(input: GuestInput): Promise<ActionResult> {
+export async function createGuest(
+  input: GuestInput,
+  sendInvitation = false,
+): Promise<ActionResult> {
   await requireAdmin();
 
   const parsed = guestSchema.safeParse(input);
   if (!parsed.success) return fail(parsed.error.issues[0].message);
 
   const data = parsed.data;
-  await prisma.guest.create({
+  const guest = await prisma.guest.create({
     data: {
       firstName: data.firstName,
       lastName: data.lastName,
@@ -85,7 +88,20 @@ export async function createGuest(input: GuestInput): Promise<ActionResult> {
 
   revalidatePath("/admin/invites");
   revalidatePath("/admin");
-  return { ok: true };
+
+  if (!sendInvitation || !guest.email) return { ok: true };
+
+  // L'invité est créé quoi qu'il arrive : un échec d'envoi se signale, mais
+  // ne doit pas donner l'impression que la création a échoué.
+  const result = await sendInvitationTo(guest);
+  revalidatePath("/admin/emails");
+
+  return result.ok
+    ? { ok: true, message: `Invité créé, invitation envoyée à ${guest.email}.` }
+    : {
+        ok: true,
+        message: `Invité créé, mais l'invitation n'est pas partie : ${result.error}`,
+      };
 }
 
 export async function updateGuest(
@@ -141,7 +157,10 @@ export async function regenerateGuestCode(id: string): Promise<ActionResult> {
  * `Prénom;Nom;FULL|COCKTAIL;accompagnants;email`
  * Seuls le prénom et le nom sont obligatoires.
  */
-export async function importGuests(raw: string): Promise<ActionResult> {
+export async function importGuests(
+  raw: string,
+  sendInvitations = false,
+): Promise<ActionResult> {
   await requireAdmin();
 
   const lines = raw
@@ -153,6 +172,7 @@ export async function importGuests(raw: string): Promise<ActionResult> {
 
   let created = 0;
   const errors: string[] = [];
+  const invitable: InvitableGuest[] = [];
 
   for (const [index, line] of lines.entries()) {
     const cells = line.split(/[;\t,]/).map((cell) => cell.trim());
@@ -172,7 +192,7 @@ export async function importGuests(raw: string): Promise<ActionResult> {
     }
 
     const data = parsed.data;
-    await prisma.guest.create({
+    const guest = await prisma.guest.create({
       data: {
         firstName: data.firstName,
         lastName: data.lastName,
@@ -183,6 +203,7 @@ export async function importGuests(raw: string): Promise<ActionResult> {
       },
     });
     created++;
+    if (guest.email) invitable.push(guest);
   }
 
   revalidatePath("/admin/invites");
@@ -192,24 +213,52 @@ export async function importGuests(raw: string): Promise<ActionResult> {
     return fail(errors[0] ?? "Aucun invité n'a pu être importé.");
   }
 
-  return {
-    ok: true,
-    message: errors.length
-      ? `${created} invité(s) importé(s), ${errors.length} ligne(s) ignorée(s) : ${errors[0]}`
-      : `${created} invité(s) importé(s).`,
-  };
+  const parts = [`${created} invité(s) importé(s)`];
+  if (errors.length) {
+    parts.push(`${errors.length} ligne(s) ignorée(s) : ${errors[0]}`);
+  }
+
+  // Les invités sont importés quoi qu'il arrive : l'envoi est un supplément
+  // dont on rend compte à part.
+  if (sendInvitations && invitable.length > 0) {
+    let sent = 0;
+    let firstError: string | undefined;
+
+    for (const guest of invitable) {
+      const result = await sendInvitationTo(guest);
+      if (result.ok) sent++;
+      else firstError ??= result.error;
+    }
+
+    revalidatePath("/admin/emails");
+    parts.push(
+      firstError
+        ? `${sent} invitation(s) envoyée(s), ${invitable.length - sent} en échec : ${firstError}`
+        : `${sent} invitation(s) envoyée(s)`,
+    );
+  }
+
+  return { ok: true, message: `${parts.join(", ")}.` };
 }
 
 // --------------------------------------------------------------------------
 // Emails
 // --------------------------------------------------------------------------
 
-export async function sendInvitation(guestId: string): Promise<ActionResult> {
-  await requireAdmin();
+type InvitableGuest = {
+  id: string;
+  firstName: string;
+  code: string;
+  email: string | null;
+};
 
-  const guest = await prisma.guest.findUnique({ where: { id: guestId } });
-  if (!guest) return fail("Invité introuvable.");
-  if (!guest.email) return fail("Cet invité n'a pas encore d'adresse email.");
+/** Envoi du lien d'invitation à un invité déjà chargé. */
+async function sendInvitationTo(
+  guest: InvitableGuest,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!guest.email) {
+    return { ok: false, error: "Cet invité n'a pas encore d'adresse email." };
+  }
 
   const settings = await getSettings();
   const email = invitationEmail({
@@ -219,12 +268,21 @@ export async function sendInvitation(guestId: string): Promise<ActionResult> {
     weddingDateLabel: formatDate(settings.weddingDate),
   });
 
-  const result = await sendMail({
+  return sendMail({
     ...email,
     to: guest.email,
     kind: "INVITATION",
     guestId: guest.id,
   });
+}
+
+export async function sendInvitation(guestId: string): Promise<ActionResult> {
+  await requireAdmin();
+
+  const guest = await prisma.guest.findUnique({ where: { id: guestId } });
+  if (!guest) return fail("Invité introuvable.");
+
+  const result = await sendInvitationTo(guest);
 
   revalidatePath("/admin/emails");
   revalidatePath(`/admin/invites/${guestId}`);
@@ -232,58 +290,6 @@ export async function sendInvitation(guestId: string): Promise<ActionResult> {
   return result.ok
     ? { ok: true, message: `Invitation envoyée à ${guest.email}.` }
     : fail(result.error);
-}
-
-/** Envoie son lien à chaque invité qui a un email et n'a jamais rien reçu. */
-export async function sendPendingInvitations(): Promise<ActionResult> {
-  await requireAdmin();
-
-  const guests = await prisma.guest.findMany({
-    where: {
-      email: { not: null },
-      emails: { none: { kind: "INVITATION", status: "SENT" } },
-    },
-  });
-
-  if (guests.length === 0) {
-    return { ok: true, message: "Tout le monde a déjà reçu son invitation." };
-  }
-
-  const settings = await getSettings();
-  const weddingDateLabel = formatDate(settings.weddingDate);
-  let sent = 0;
-  let firstError: string | undefined;
-
-  for (const guest of guests) {
-    const email = invitationEmail({
-      coupleNames: settings.coupleNames,
-      firstName: guest.firstName,
-      url: guestUrl(guest.code),
-      weddingDateLabel,
-    });
-
-    const result = await sendMail({
-      ...email,
-      to: guest.email!,
-      kind: "INVITATION",
-      guestId: guest.id,
-    });
-
-    if (result.ok) sent++;
-    else firstError ??= result.error;
-  }
-
-  revalidatePath("/admin/emails");
-  revalidatePath("/admin/invites");
-
-  if (sent === 0) return fail(firstError ?? "Aucun email n'a pu être envoyé.");
-
-  return {
-    ok: true,
-    message: `${sent} invitation(s) envoyée(s)${
-      firstError ? ` — ${guests.length - sent} en échec : ${firstError}` : ""
-    }.`,
-  };
 }
 
 /** Diffuse une info publiée à tous les invités concernés qui ont un email. */

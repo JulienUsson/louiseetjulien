@@ -4,7 +4,6 @@ import { ExternalLink } from "lucide-react";
 import { CopyMessageButton } from "@/components/admin/copy-message-button";
 import { GuestDialog } from "@/components/admin/guest-dialog";
 import { GuestImportDialog } from "@/components/admin/guest-import-dialog";
-import { SendPendingButton } from "@/components/admin/send-pending-button";
 import { CopyLinkButton } from "@/components/admin/copy-link-button";
 import { RsvpBadge } from "@/components/admin/rsvp-badge";
 import { Badge } from "@/components/ui/badge";
@@ -54,14 +53,6 @@ export default async function GuestsPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <SendPendingButton
-            reachable={
-              guests.filter(
-                (guest) => guest.email && guest.emails.length === 0,
-              ).length
-            }
-            unreachable={guests.filter((guest) => !guest.email).length}
-          />
           <GuestImportDialog />
           <GuestDialog />
         </div>
