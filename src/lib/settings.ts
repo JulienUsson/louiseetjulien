@@ -8,10 +8,15 @@ import {
 
 export {
   SETTING_DEFAULTS,
-  SETTING_FIELDS,
+  SETTING_GROUPS,
+  VENUES,
   formatDate,
+  osmEmbedUrl,
+  osmLinkUrl,
+  parseCoords,
   type SettingKey,
   type Settings,
+  type Venue,
 } from "@/lib/settings-fields";
 
 /** Réglages stockés en base, complétés par les valeurs par défaut. */

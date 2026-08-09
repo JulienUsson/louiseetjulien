@@ -28,7 +28,7 @@ export function CodeForm() {
         htmlFor="code"
         className="block text-sm text-muted-foreground mb-3"
       >
-        Vous avez reçu un code personnel ?
+        Tu as reçu un code personnel ?
       </label>
       <div className="flex gap-2">
         <Input

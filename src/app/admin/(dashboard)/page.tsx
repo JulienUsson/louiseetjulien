@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   CheckCircle2,
   CircleHelp,
+  Landmark,
   Mail,
   MailWarning,
   Users,
@@ -29,6 +30,7 @@ export default async function DashboardPage() {
       select: {
         type: true,
         attending: true,
+        attendingMairie: true,
         email: true,
         _count: { select: { companions: true } },
       },
@@ -50,6 +52,11 @@ export default async function DashboardPage() {
   const fullDay = headcountOf("FULL");
   const cocktailOnly = headcountOf("COCKTAIL");
   const headcount = fullDay + cocktailOnly;
+
+  // Les accompagnants suivent leur hôte à la mairie.
+  const mairie = yes
+    .filter((guest) => guest.attendingMairie)
+    .reduce((total, guest) => total + 1 + guest._count.companions, 0);
 
   const dateLabel = formatDate(settings.weddingDate);
 
@@ -108,6 +115,13 @@ export default async function DashboardPage() {
             <div className="flex justify-between border-t pt-2">
               <span className="font-medium">Total</span>
               <span className="font-medium">{headcount} personne(s)</span>
+            </div>
+            <div className="flex justify-between border-t pt-2 text-muted-foreground">
+              <span className="flex items-center gap-1.5">
+                <Landmark className="size-4 text-orange-500" />
+                Dont à la mairie
+              </span>
+              <span>{mairie} personne(s)</span>
             </div>
           </CardContent>
         </Card>

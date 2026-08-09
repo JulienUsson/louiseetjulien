@@ -38,6 +38,9 @@ model Guest {
   // --- Réponse de l'invité ---
   attending   Boolean?
   respondedAt DateTime?
+  /// Présence à la mairie, plus intime que le reste de la journée : posée
+  /// séparément, et null tant que l'invité n'a pas répondu.
+  attendingMairie Boolean?
   /// Régime alimentaire / allergies de l'invité principal.
   dietary String?
   /// Mot libre laissé aux mariés.
