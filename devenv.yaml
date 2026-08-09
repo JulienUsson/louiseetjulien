@@ -3,6 +3,10 @@ inputs:
   nixpkgs:
     url: github:cachix/devenv-nixpkgs/rolling
 
+secretspec:
+  enable: true
+  provider: dotenv
+
 # If you're using non-OSS software, you can set allowUnfree to true.
 # allowUnfree: true
 
