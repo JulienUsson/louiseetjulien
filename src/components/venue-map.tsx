@@ -10,6 +10,7 @@ import { osmEmbedUrl, osmLinkUrl, parseCoords } from "@/lib/settings-fields";
 export function VenueBlock({
   label,
   time,
+  schedule,
   place,
   address,
   coords: rawCoords,
@@ -17,6 +18,11 @@ export function VenueBlock({
 }: {
   label: string;
   time?: string;
+  /**
+   * Quand plusieurs moments se déroulent au même endroit, on les liste ici
+   * plutôt que de répéter le lieu et sa carte.
+   */
+  schedule?: { label: string; time?: string }[];
   place?: string;
   address?: string;
   coords?: string;
@@ -43,6 +49,22 @@ export function VenueBlock({
           {address && (
             <div className="text-muted-foreground">{address}</div>
           )}
+
+          {schedule && schedule.length > 0 && (
+            <ul className="mt-2 space-y-0.5">
+              {schedule.map((step) => (
+                <li key={step.label} className="flex gap-2">
+                  {step.time && (
+                    <span className="shrink-0 tabular-nums text-orange-600">
+                      {step.time}
+                    </span>
+                  )}
+                  <span className="text-muted-foreground">{step.label}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+
           {note && (
             <div className="mt-1 text-xs text-muted-foreground">{note}</div>
           )}

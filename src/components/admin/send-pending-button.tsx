@@ -7,14 +7,29 @@ import { toast } from "sonner";
 import { sendPendingInvitations } from "@/app/admin/actions";
 import { Button } from "@/components/ui/button";
 
-/** Envoie son lien à tout invité ayant un email et n'ayant jamais été contacté. */
-export function SendPendingButton() {
+/**
+ * Envoie son lien à tout invité ayant un email et n'ayant jamais été contacté.
+ * Les invités sans email sont hors d'atteinte : le bouton le dit, sinon on
+ * croit avoir invité tout le monde alors qu'il en manque la moitié.
+ */
+export function SendPendingButton({
+  reachable,
+  unreachable,
+}: {
+  reachable: number;
+  unreachable: number;
+}) {
   const [pending, startTransition] = useTransition();
 
   return (
     <Button
       variant="outline"
-      disabled={pending}
+      disabled={pending || reachable === 0}
+      title={
+        unreachable > 0
+          ? `${unreachable} invité(s) n'ont pas encore d'email : envoyez-leur leur lien avec « Copier le message ».`
+          : undefined
+      }
       onClick={() =>
         startTransition(async () => {
           const result = await sendPendingInvitations();
@@ -28,7 +43,7 @@ export function SendPendingButton() {
       ) : (
         <Send className="size-4" />
       )}
-      Envoyer les invitations en attente
+      Envoyer {reachable} invitation(s) en attente
     </Button>
   );
 }

@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { ExternalLink } from "lucide-react";
 
+import { CopyMessageButton } from "@/components/admin/copy-message-button";
 import { GuestDialog } from "@/components/admin/guest-dialog";
 import { GuestImportDialog } from "@/components/admin/guest-import-dialog";
 import { SendPendingButton } from "@/components/admin/send-pending-button";
@@ -18,21 +20,28 @@ import {
 import { guestUrl } from "@/lib/codes";
 import { GUEST_TYPE_LABELS, type GuestType } from "@/lib/constants";
 import { prisma } from "@/lib/db";
+import { invitationMessage } from "@/lib/invitation-message";
+import { formatDate, getSettings } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 
 export default async function GuestsPage() {
-  const guests = await prisma.guest.findMany({
-    orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
-    include: {
-      _count: { select: { companions: true } },
-      emails: {
-        where: { kind: "INVITATION", status: "SENT" },
-        select: { id: true },
-        take: 1,
+  const [guests, settings] = await Promise.all([
+    prisma.guest.findMany({
+      orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+      include: {
+        _count: { select: { companions: true } },
+        emails: {
+          where: { kind: "INVITATION", status: "SENT" },
+          select: { id: true },
+          take: 1,
+        },
       },
-    },
-  });
+    }),
+    getSettings(),
+  ]);
+
+  const weddingDateLabel = formatDate(settings.weddingDate);
 
   return (
     <div className="space-y-6">
@@ -45,7 +54,14 @@ export default async function GuestsPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <SendPendingButton />
+          <SendPendingButton
+            reachable={
+              guests.filter(
+                (guest) => guest.email && guest.emails.length === 0,
+              ).length
+            }
+            unreachable={guests.filter((guest) => !guest.email).length}
+          />
           <GuestImportDialog />
           <GuestDialog />
         </div>
@@ -67,7 +83,7 @@ export default async function GuestsPage() {
                 <TableHead>Formule</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Réponse</TableHead>
-                <TableHead className="text-right">Lien</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -115,9 +131,34 @@ export default async function GuestsPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
-                      <CopyLinkButton url={guestUrl(guest.code)} />
+                      <CopyLinkButton
+                        url={guestUrl(guest.code)}
+                        label="Lien"
+                      />
+                      <CopyMessageButton
+                        label="Message"
+                        message={invitationMessage({
+                          coupleNames: settings.coupleNames,
+                          firstName: guest.firstName,
+                          url: guestUrl(guest.code),
+                          weddingDateLabel,
+                        })}
+                      />
                       <Button asChild variant="ghost" size="sm">
-                        <Link href={`/admin/invites/${guest.id}`}>Ouvrir</Link>
+                        <a
+                          href={guestUrl(guest.code)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Ouvrir la page telle que l'invité la voit"
+                        >
+                          <ExternalLink className="size-4" />
+                          <span className="sr-only sm:not-sr-only">
+                            Prévisualiser
+                          </span>
+                        </a>
+                      </Button>
+                      <Button asChild variant="ghost" size="sm">
+                        <Link href={`/admin/invites/${guest.id}`}>Fiche</Link>
                       </Button>
                     </div>
                   </TableCell>

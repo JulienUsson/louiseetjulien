@@ -11,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { normalizeCode } from "@/lib/code-format";
+import { isSameVenue, normalizeCode } from "@/lib/code-format";
 import { type GuestType } from "@/lib/constants";
 import { prisma } from "@/lib/db";
 import { formatDate, getSettings } from "@/lib/settings";
@@ -50,6 +50,20 @@ export default async function GuestPage({
   const dateLabel = formatDate(settings.weddingDate);
   const deadlineLabel = formatDate(settings.rsvpDeadline, false);
   const hasMairie = Boolean(settings.mairiePlace || settings.mairieAddress);
+
+  // Quand la réception se tient là où a lieu la cérémonie laïque, on n'affiche
+  // qu'un seul bloc : répéter le lieu et sa carte n'apprend rien et donne
+  // l'impression qu'il faut se déplacer entre les deux.
+  const sameVenue =
+    !settings.receptionPlace ||
+    isSameVenue(
+      `${settings.ceremonyPlace} ${settings.ceremonyAddress}`,
+      `${settings.receptionPlace} ${settings.receptionAddress}`,
+    );
+
+  const receptionLabel = isCocktail
+    ? "Vin d'honneur"
+    : "Vin d'honneur, dîner et soirée";
 
   return (
     <main className="bg-wedding min-h-screen">
@@ -101,26 +115,42 @@ export default async function GuestPage({
               />
             )}
 
-            <VenueBlock
-              label="Cérémonie laïque"
-              time={settings.ceremonyTime}
-              place={settings.ceremonyPlace}
-              address={settings.ceremonyAddress}
-              coords={settings.ceremonyCoords}
-            />
+            {sameVenue ? (
+              <VenueBlock
+                label="Cérémonie laïque et réception"
+                place={settings.ceremonyPlace}
+                address={settings.ceremonyAddress}
+                coords={settings.ceremonyCoords}
+                schedule={[
+                  { label: "Cérémonie laïque", time: settings.ceremonyTime },
+                  { label: receptionLabel, time: settings.cocktailTime },
+                ]}
+                note="Tout se passe au même endroit : rien à faire entre les deux."
+              />
+            ) : (
+              <>
+                <VenueBlock
+                  label="Cérémonie laïque"
+                  time={settings.ceremonyTime}
+                  place={settings.ceremonyPlace}
+                  address={settings.ceremonyAddress}
+                  coords={settings.ceremonyCoords}
+                />
 
-            <VenueBlock
-              label={isCocktail ? "Vin d'honneur" : "Réception"}
-              time={settings.cocktailTime}
-              place={settings.receptionPlace}
-              address={settings.receptionAddress}
-              coords={settings.receptionCoords}
-              note={
-                isCocktail
-                  ? undefined
-                  : "Le vin d'honneur, puis le dîner et la soirée."
-              }
-            />
+                <VenueBlock
+                  label={isCocktail ? "Vin d'honneur" : "Réception"}
+                  time={settings.cocktailTime}
+                  place={settings.receptionPlace}
+                  address={settings.receptionAddress}
+                  coords={settings.receptionCoords}
+                  note={
+                    isCocktail
+                      ? undefined
+                      : "Le vin d'honneur, puis le dîner et la soirée."
+                  }
+                />
+              </>
+            )}
 
             {deadlineLabel && (
               <div className="flex gap-3 text-sm">

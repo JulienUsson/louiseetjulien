@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Baby, ExternalLink, Landmark, Pencil } from "lucide-react";
 
 import { CopyLinkButton } from "@/components/admin/copy-link-button";
+import { CopyMessageButton } from "@/components/admin/copy-message-button";
 import { GuestDangerZone } from "@/components/admin/guest-danger-zone";
 import { GuestDialog } from "@/components/admin/guest-dialog";
 import { RsvpBadge } from "@/components/admin/rsvp-badge";
@@ -25,6 +26,8 @@ import {
   type GuestType,
 } from "@/lib/constants";
 import { prisma } from "@/lib/db";
+import { invitationMessage } from "@/lib/invitation-message";
+import { formatDate, getSettings } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 
@@ -40,13 +43,16 @@ export default async function GuestDetailPage({
 }) {
   const { id } = await params;
 
-  const guest = await prisma.guest.findUnique({
-    where: { id },
-    include: {
-      companions: { orderBy: { createdAt: "asc" } },
-      emails: { orderBy: { createdAt: "desc" }, take: 20 },
-    },
-  });
+  const [guest, settings] = await Promise.all([
+    prisma.guest.findUnique({
+      where: { id },
+      include: {
+        companions: { orderBy: { createdAt: "asc" } },
+        emails: { orderBy: { createdAt: "desc" }, take: 20 },
+      },
+    }),
+    getSettings(),
+  ]);
 
   if (!guest) notFound();
 
@@ -114,6 +120,15 @@ export default async function GuestDetailPage({
             </div>
             <div className="flex flex-wrap gap-2">
               <CopyLinkButton url={url} variant="outline" />
+              <CopyMessageButton
+                variant="outline"
+                message={invitationMessage({
+                  coupleNames: settings.coupleNames,
+                  firstName: guest.firstName,
+                  url,
+                  weddingDateLabel: formatDate(settings.weddingDate),
+                })}
+              />
               <Button asChild variant="ghost" size="sm">
                 <a href={url} target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="size-4" />
