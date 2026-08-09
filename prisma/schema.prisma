@@ -1,0 +1,131 @@
+// Schéma de la base de gestion du mariage de Louise & Julien.
+// SQLite ne supporte pas les enums Prisma : les champs « énumérés » sont des
+// String contraintes côté application (voir src/lib/constants.ts).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+/// Un invité = une invitation = un lien d'accès unique.
+/// Le couple crée l'invité et son code ; l'invité renseigne lui-même son email.
+model Guest {
+  id String @id @default(cuid())
+
+  /// Code aléatoire utilisé dans l'URL /i/<code>. Jamais réattribué.
+  code String @unique
+
+  firstName String
+  lastName  String
+
+  /// Renseigné par l'invité lui-même sur sa page (ou par nous si on le connaît).
+  email String?
+  phone String?
+
+  /// FULL (journée complète) ou COCKTAIL (vin d'honneur).
+  type String @default("FULL")
+
+  /// Nombre d'accompagnants que l'invité peut déclarer (conjoint, enfants...).
+  maxCompanions Int @default(0)
+
+  /// Notes privées côté back-office, jamais affichées à l'invité.
+  notes String?
+
+  // --- Réponse de l'invité ---
+  attending   Boolean?
+  respondedAt DateTime?
+  /// Présence à la mairie, plus intime que le reste de la journée : posée
+  /// séparément, et null tant que l'invité n'a pas répondu.
+  attendingMairie Boolean?
+  /// Régime alimentaire / allergies de l'invité principal.
+  dietary String?
+  /// Mot libre laissé aux mariés.
+  message String?
+
+  companions Companion[]
+  emails     EmailLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([type])
+  @@index([attending])
+}
+
+/// Personne accompagnant un invité, déclarée par l'invité lui-même.
+model Companion {
+  id      String @id @default(cuid())
+  guestId String
+  guest   Guest  @relation(fields: [guestId], references: [id], onDelete: Cascade)
+
+  firstName String
+  lastName  String?
+  /// Permet d'anticiper les menus enfants et le nombre de chaises hautes.
+  isChild Boolean @default(false)
+  dietary String?
+
+  createdAt DateTime @default(now())
+
+  @@index([guestId])
+}
+
+/// Information publiée aux invités (logistique, hébergement, cadeaux...).
+model InfoPost {
+  id    String @id @default(cuid())
+  title String
+  /// Corps du message, en texte simple (les sauts de ligne sont conservés).
+  body String
+
+  /// ALL, FULL ou COCKTAIL : qui voit cette info.
+  audience String @default("ALL")
+
+  published Boolean   @default(false)
+  publishedAt DateTime?
+  /// Épinglé en haut de la liste côté invité.
+  pinned Boolean @default(false)
+  /// Ordre d'affichage croissant, à égalité de pinned.
+  position Int @default(0)
+
+  emails EmailLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([published, audience])
+}
+
+/// Trace de chaque email envoyé, pour éviter les doublons et diagnostiquer.
+model EmailLog {
+  id String @id @default(cuid())
+
+  guestId String?
+  guest   Guest?  @relation(fields: [guestId], references: [id], onDelete: SetNull)
+
+  infoPostId String?
+  infoPost   InfoPost? @relation(fields: [infoPostId], references: [id], onDelete: SetNull)
+
+  /// INVITATION, INFO ou TEST.
+  kind    String
+  to      String
+  subject String
+
+  /// SENT ou FAILED.
+  status String
+  error  String?
+
+  createdAt DateTime @default(now())
+
+  @@index([guestId])
+  @@index([kind, status])
+}
+
+/// Réglages de l'évènement, éditables depuis le back-office.
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}

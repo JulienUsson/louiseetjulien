@@ -1,4 +1,30 @@
-# Devenv
+# deps
+node_modules
+
+# next
+.next
+out
+build
+
+# prisma
+src/generated
+prisma/*.db
+prisma/*.db-journal
+*.db
+*.db-journal
+
+# env
+.env
+.env.local
+.env*.local
+
+# skills scaffoldees par prisma init
+.claude
+.windsurf
+.agents
+skills-lock.json
+
+# devenv
 .devenv*
 devenv.local.nix
 devenv.local.yaml
@@ -8,3 +34,8 @@ devenv.local.yaml
 
 # pre-commit
 .pre-commit-config.yaml
+
+# divers
+.DS_Store
+*.tsbuildinfo
+next-env.d.ts

@@ -5,46 +5,35 @@
   inputs,
   ...
 }: {
-  # https://devenv.sh/basics/
-  # env.GREET = "devenv";
+  packages = with pkgs; [alejandra git pnpm nodejs_22 secretspec sqlite];
 
-  # https://devenv.sh/packages/
-  packages = with pkgs; [alejandra git pnpm];
-
-  # https://devenv.sh/languages/
-  # languages.rust.enable = true;
-
-  # https://devenv.sh/processes/
-  # processes.dev.exec = "${lib.getExe pkgs.watchexec} -n -- ls -la";
-
-  # https://devenv.sh/services/
-  # services.postgres.enable = true;
-
-  # https://devenv.sh/scripts/
-  # scripts.hello.exec = ''
-  #   echo hello from $GREET
-  # '';
-
-  # https://devenv.sh/basics/
-  # enterShell = ''
-  #   hello         # Run scripts directly
-  #   git --version # Use packages
-  # '';
-
-  # https://devenv.sh/tasks/
-  # tasks = {
-  #   "myproj:setup".exec = "mytool build";
-  #   "devenv:enterShell".after = [ "myproj:setup" ];
-  # };
-
-  # https://devenv.sh/tests/
-  # enterTest = ''
-  #   echo "Running tests"
-  #   git --version | grep --color=auto "${pkgs.git.version}"
-  # '';
-
-  # https://devenv.sh/git-hooks/
-  # git-hooks.hooks.shellcheck.enable = true;
-
-  # See full reference at https://devenv.sh/reference/options/
+  profiles = {
+    dev.module = {
+      env = {
+        DATABASE_URL = "file:./dev.db";
+        APP_URL = "http://localhost:3000";
+        ADMIN_PASSWORD = "admin";
+        SESSION_SECRET = "dev-only-session-secret-0123456789";
+        SMTP_HOST = "localhost";
+        SMTP_PORT = "1025";
+      };
+      services.mailpit.enable = true;
+    };
+    production.module = {
+      env = {
+        SECRETSPEC_PROFILE = "production";
+        APP_URL = "https://louiseetjulien.fr";
+        ADMIN_PASSWORD = config.secretspec.secrets.ADMIN_PASSWORD;
+        SESSION_SECRET = config.secretspec.secrets.SESSION_SECRET;
+        DATABASE_URL = "file:../mariage.db";
+        NODE_ENV = "production";
+        SMTP_HOST = "smtp.tem.scaleway.com";
+        SMTP_PORT = "465";
+        SMTP_SECURE = "true";
+        SMTP_USER = config.secretspec.secrets.SMTP_USER;
+        SMTP_PASSWORD = config.secretspec.secrets.SMTP_PASSWORD;
+        SMTP_FROM = "noreply@louiseetjulien.fr";
+      };
+    };
+  };
 }
