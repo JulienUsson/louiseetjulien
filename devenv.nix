@@ -13,10 +13,11 @@
         DATABASE_URL = "file:./dev.db";
         APP_URL = "http://localhost:3000";
         ADMIN_PASSWORD = "admin";
-        # Valeur fixe et non secrète : sans elle l'app tire un secret au
-        # hasard à chaque démarrage, ce qui déconnecte le back-office.
         SESSION_SECRET = "dev-only-session-secret-0123456789";
+        SMTP_HOST = "localhost";
+        SMTP_PORT = "1025";
       };
+      services.mailpit.enable = true;
     };
     production.module = {
       env = {
