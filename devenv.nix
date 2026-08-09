@@ -6,7 +6,9 @@
   ...
 }: {
   # https://devenv.sh/basics/
-  # env.GREET = "devenv";
+  env = {
+    DATABASE_URL = "file:./mariage.db";
+  };
 
   # https://devenv.sh/packages/
   packages = with pkgs; [alejandra git pnpm nodejs_22 sqlite];
