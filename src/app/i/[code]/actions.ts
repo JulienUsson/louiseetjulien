@@ -18,6 +18,7 @@ const rsvpSchema = z.object({
   email: z.string().trim().email("Adresse email invalide.").max(200),
   phone: z.string().trim().max(40).optional().default(""),
   attending: z.boolean(),
+  attendingMairie: z.boolean().optional().default(false),
   dietary: z.string().trim().max(300).optional().default(""),
   message: z.string().trim().max(2000).optional().default(""),
   companions: z.array(companionSchema).default([]),
@@ -63,6 +64,8 @@ export async function submitRsvp(input: RsvpInput): Promise<RsvpState> {
         phone: data.phone || null,
         attending: data.attending,
         respondedAt: new Date(),
+        // La question mairie ne se pose pas si l'invité ne vient pas.
+        attendingMairie: data.attending ? data.attendingMairie : false,
         dietary: data.attending ? data.dietary || null : null,
         message: data.message || null,
         companions: {

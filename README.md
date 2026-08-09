@@ -44,14 +44,39 @@ L'application écoute sur <http://localhost:3000>, le back-office sur
 
 ## Les deux types d'invités
 
-| Type       | Libellé            | Voit                                              |
-| ---------- | ------------------ | ------------------------------------------------- |
-| `FULL`     | Journée complète   | Cérémonie, vin d'honneur, dîner et soirée         |
-| `COCKTAIL` | Vin d'honneur      | Cérémonie et vin d'honneur                        |
+| Type       | Libellé            | Voit                                               |
+| ---------- | ------------------ | -------------------------------------------------- |
+| `FULL`     | Journée complète   | Cérémonie laïque, vin d'honneur, dîner et soirée   |
+| `COCKTAIL` | Vin d'honneur      | Cérémonie laïque et vin d'honneur                  |
+
+La formule n'est jamais affichée à l'invité comme une étiquette : elle est dite
+en toutes lettres dans la description du jour J, pour que les invités au vin
+d'honneur sachent à quoi ils sont conviés sans se voir coller un tampon.
 
 Chaque information publiée cible une audience (`ALL`, `FULL` ou `COCKTAIL`) :
 elle n'apparaît que sur la page des invités concernés, et la diffusion par
 email suit la même règle.
+
+## La journée et ses lieux
+
+Trois lieux, configurés dans `/admin/reglages` : la **mairie**, la **cérémonie
+laïque** et la **réception**. Il n'y a pas de cérémonie religieuse.
+
+Le passage en mairie étant plus intime, chaque invité indique séparément s'il
+souhaite y assister — la question n'apparaît que si un lieu de mairie est
+renseigné, et seulement pour ceux qui viennent. Le tableau de bord en donne
+l'effectif, accompagnants compris.
+
+Chaque lieu accepte des coordonnées `latitude,longitude` qui déclenchent
+l'affichage d'une carte OpenStreetMap sur la page des invités. Le bouton
+« Localiser l'adresse » les remplit via Nominatim ; les coordonnées sont
+stockées en base, aucun appel externe n'a lieu au rendu des pages invité. Sans
+coordonnées, seule l'adresse en texte est affichée.
+
+## Le ton
+
+Les invités sont tutoyés, partout : pages, formulaire de réponse, emails. Le
+back-office, lui, s'adresse aux mariés.
 
 ## Créer les invités
 
@@ -78,9 +103,15 @@ L'envoi est actif dès que `SMTP_HOST` est renseigné. Sans configuration SMTP,
 l'application fonctionne normalement mais aucun email ne part : chaque
 tentative est journalisée dans `/admin/emails` avec sa raison d'échec.
 
-Trois types d'envois : le lien d'invitation (individuel ou groupé), la
-diffusion d'une information publiée, et un email de test pour valider la
-configuration avant la première vraie campagne.
+Quatre types d'envois : le lien d'invitation (individuel ou groupé), la
+diffusion d'une information publiée, un message libre ciblé, et un email de
+test pour valider la configuration avant la première vraie campagne.
+
+Le message libre se compose depuis `/admin/emails` et se cible par formule et
+par état de réponse — pour relancer les silencieux, ou n'écrire qu'aux
+présents. Le nombre de destinataires se met à jour à mesure que vous cochez, et
+signale les invités qui correspondent aux filtres mais n'ont pas encore
+renseigné leur email.
 
 ## Déploiement on-premise
 
@@ -146,8 +177,8 @@ sqlite3 /var/lib/louiseetjulien/wedding.db ".backup '/sauvegardes/wedding-$(date
 ## Modèle de données
 
 - `Guest` — un invité = une invitation = un lien. Porte le code, le type,
-  l'email (renseigné par l'invité), la réponse et le nombre d'accompagnants
-  autorisés.
+  l'email (renseigné par l'invité), la réponse, la présence à la mairie et le
+  nombre d'accompagnants autorisés.
 - `Companion` — les accompagnants déclarés par l'invité.
 - `InfoPost` — une information, son audience et son état de publication.
 - `EmailLog` — la trace de chaque envoi, réussi ou non.

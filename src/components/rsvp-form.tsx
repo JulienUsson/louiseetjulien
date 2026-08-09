@@ -22,10 +22,14 @@ export type CompanionDraft = {
 export type RsvpFormProps = {
   code: string;
   maxCompanions: number;
+  /** La question mairie n'a de sens que si un lieu de mairie est renseigné. */
+  askMairie: boolean;
+  mairieLabel: string;
   defaultValues: {
     email: string;
     phone: string;
     attending: boolean | null;
+    attendingMairie: boolean | null;
     dietary: string;
     message: string;
     companions: CompanionDraft[];
@@ -39,9 +43,18 @@ const emptyCompanion: CompanionDraft = {
   dietary: "",
 };
 
-export function RsvpForm({ code, maxCompanions, defaultValues }: RsvpFormProps) {
+export function RsvpForm({
+  code,
+  maxCompanions,
+  askMairie,
+  mairieLabel,
+  defaultValues,
+}: RsvpFormProps) {
   const [attending, setAttending] = useState<boolean | null>(
     defaultValues.attending,
+  );
+  const [attendingMairie, setAttendingMairie] = useState<boolean>(
+    defaultValues.attendingMairie ?? false,
   );
   const [email, setEmail] = useState(defaultValues.email);
   const [phone, setPhone] = useState(defaultValues.phone);
@@ -64,7 +77,7 @@ export function RsvpForm({ code, maxCompanions, defaultValues }: RsvpFormProps) 
     event.preventDefault();
 
     if (attending === null) {
-      toast.error("Merci d'indiquer si vous serez des nôtres.");
+      toast.error("Dis-nous si tu seras des nôtres.");
       return;
     }
 
@@ -74,6 +87,7 @@ export function RsvpForm({ code, maxCompanions, defaultValues }: RsvpFormProps) 
         email,
         phone,
         attending,
+        attendingMairie: askMairie ? attendingMairie : false,
         dietary,
         message,
         companions,
@@ -82,8 +96,8 @@ export function RsvpForm({ code, maxCompanions, defaultValues }: RsvpFormProps) 
       if (result.ok) {
         toast.success(
           attending
-            ? "Merci ! Votre réponse est enregistrée."
-            : "Merci pour votre réponse, vous nous manquerez.",
+            ? "Merci ! Ta réponse est enregistrée."
+            : "Merci pour ta réponse, tu vas nous manquer.",
         );
       } else {
         toast.error(result.error ?? "Une erreur est survenue.");
@@ -95,7 +109,7 @@ export function RsvpForm({ code, maxCompanions, defaultValues }: RsvpFormProps) 
     <form onSubmit={handleSubmit} className="space-y-6">
       <fieldset className="space-y-3">
         <legend className="text-sm font-medium mb-3">
-          Serez-vous des nôtres ?
+          Tu seras des nôtres ?
         </legend>
         <div className="grid grid-cols-2 gap-3">
           <ChoiceButton
@@ -117,7 +131,7 @@ export function RsvpForm({ code, maxCompanions, defaultValues }: RsvpFormProps) 
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="email">Votre email *</Label>
+          <Label htmlFor="email">Ton email *</Label>
           <Input
             id="email"
             type="email"
@@ -128,7 +142,7 @@ export function RsvpForm({ code, maxCompanions, defaultValues }: RsvpFormProps) 
             autoComplete="email"
           />
           <p className="text-xs text-muted-foreground">
-            Pour vous envoyer les infos pratiques. Rien d&apos;autre, promis.
+            Pour t&apos;envoyer les infos pratiques. Rien d&apos;autre, promis.
           </p>
         </div>
         <div className="space-y-2">
@@ -146,6 +160,31 @@ export function RsvpForm({ code, maxCompanions, defaultValues }: RsvpFormProps) 
 
       {attending === true && (
         <>
+          {askMairie && (
+            <div className="rounded-lg border bg-accent/40 p-4">
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="attendingMairie"
+                  checked={attendingMairie}
+                  onCheckedChange={(checked) =>
+                    setAttendingMairie(checked === true)
+                  }
+                  className="mt-0.5"
+                />
+                <div>
+                  <Label htmlFor="attendingMairie" className="font-normal">
+                    Je souhaite assister au passage {mairieLabel}
+                  </Label>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    C&apos;est un moment plus court et plus intime, en amont de
+                    la cérémonie laïque. Aucune obligation : coche seulement si
+                    tu veux en être.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="dietary">Allergies ou régime alimentaire</Label>
             <Input
@@ -160,9 +199,9 @@ export function RsvpForm({ code, maxCompanions, defaultValues }: RsvpFormProps) 
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <Label>Vos accompagnants</Label>
+                  <Label>Tes accompagnants</Label>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Vous pouvez en déclarer jusqu&apos;à {maxCompanions}.
+                    Tu peux en déclarer jusqu&apos;à {maxCompanions}.
                   </p>
                 </div>
                 {companions.length < maxCompanions && (
@@ -257,7 +296,7 @@ export function RsvpForm({ code, maxCompanions, defaultValues }: RsvpFormProps) 
           value={message}
           onChange={(event) => setMessage(event.target.value)}
           rows={3}
-          placeholder="Une question, une contrainte, un petit mot…"
+          placeholder="Une question, une contrainte, un petit mot… on lit tout."
         />
       </div>
 

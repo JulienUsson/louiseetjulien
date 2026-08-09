@@ -26,12 +26,22 @@ async function main() {
   const settings: Record<string, string> = {
     coupleNames: "Louise & Julien",
     weddingDate: "2027-07-10",
+
+    mairieTime: "11h00",
+    mairiePlace: "Mairie du 6e arrondissement",
+    mairieAddress: "58 rue de Sèze, 69006 Lyon",
+    mairieCoords: "45.76752,4.85174",
+
     ceremonyTime: "15h00",
-    ceremonyPlace: "Église Saint-Martin",
-    ceremonyAddress: "Place de l'Église, 69000 Lyon",
+    ceremonyPlace: "Parc de la Tête d'Or",
+    ceremonyAddress: "Place Général Leclerc, 69006 Lyon",
+    ceremonyCoords: "45.77405,4.85228",
+
     cocktailTime: "17h00",
     receptionPlace: "Domaine des Oliviers",
     receptionAddress: "120 chemin des Vignes, 69000 Lyon",
+    receptionCoords: "45.75800,4.83200",
+
     rsvpDeadline: "2027-04-30",
     contactEmail: "louise.et.julien@example.com",
   };
@@ -47,7 +57,7 @@ async function main() {
   const infos = [
     {
       title: "Le programme de la journée",
-      body: "15h00 — Cérémonie à l'église Saint-Martin.\n17h00 — Vin d'honneur dans le parc du Domaine des Oliviers.\n20h00 — Dîner puis soirée dansante.\n\nLe domaine se trouve à 15 minutes de l'église, un fléchage sera installé.",
+      body: "11h00 — Passage en mairie, pour celles et ceux qui souhaitent en être.\n15h00 — Cérémonie laïque au parc de la Tête d'Or.\n17h00 — Vin d'honneur au Domaine des Oliviers.\n20h00 — Dîner puis soirée dansante.\n\nLe domaine est à 15 minutes du parc, un fléchage sera installé.",
       audience: "ALL",
       published: true,
       pinned: true,
@@ -55,7 +65,7 @@ async function main() {
     },
     {
       title: "Où dormir ?",
-      body: "Nous avons pré-réservé une dizaine de chambres à l'Hôtel du Parc, à 10 minutes du domaine.\n\nMentionnez « mariage Louise & Julien » lors de votre réservation pour bénéficier du tarif négocié, avant le 1er juin.",
+      body: "Nous avons pré-réservé une dizaine de chambres à l'Hôtel du Parc, à 10 minutes du domaine.\n\nMentionne « mariage Louise & Julien » en réservant pour bénéficier du tarif négocié, avant le 1er juin.",
       audience: "FULL",
       published: true,
       pinned: false,

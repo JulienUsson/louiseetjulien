@@ -13,7 +13,7 @@ export default function NotFound() {
       </div>
       <p className="max-w-md text-sm text-muted-foreground">
         Le lien est peut-être incomplet, ou le code a été mal recopié.
-        Vérifiez-le, ou contactez-nous et nous vous renverrons votre invitation.
+        Vérifie-le, ou écris-nous et on te renverra ton invitation.
       </p>
       <Button asChild>
         <Link href="/">Retour à l&apos;accueil</Link>

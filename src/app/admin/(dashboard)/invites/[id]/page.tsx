@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Baby, ExternalLink, Pencil } from "lucide-react";
+import { ArrowLeft, Baby, ExternalLink, Landmark, Pencil } from "lucide-react";
 
 import { CopyLinkButton } from "@/components/admin/copy-link-button";
 import { GuestDangerZone } from "@/components/admin/guest-danger-zone";
@@ -166,6 +166,21 @@ export default async function GuestDetailPage({
             </p>
           ) : (
             <>
+              {guest.attending && (
+                <Field label="Passage en mairie">
+                  {guest.attendingMairie ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      <Landmark className="size-4 text-orange-500" />
+                      Souhaite y assister
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">
+                      Ne souhaite pas y assister
+                    </span>
+                  )}
+                </Field>
+              )}
+
               <Field label="Régime alimentaire">
                 {guest.dietary ?? (
                   <span className="text-muted-foreground">Rien de signalé</span>

@@ -108,12 +108,12 @@ export function invitationEmail(params: {
   const text = [
     `Bonjour ${firstName},`,
     "",
-    `Nous nous marions${dateLine} et nous serions très heureux de vous compter parmi nous.`,
+    `Nous nous marions${dateLine} et nous serions très heureux de t'avoir avec nous.`,
     "",
-    "Voici votre lien personnel. Il vous permet de retrouver toutes les informations pratiques et de nous confirmer votre présence :",
+    "Voici ton lien personnel. Tu y retrouveras toutes les informations pratiques et tu pourras nous confirmer ta présence :",
     url,
     "",
-    "Ce lien vous est propre : merci de ne pas le transmettre.",
+    "Ce lien n'est qu'à toi : merci de ne pas le transmettre.",
     "",
     `À très vite,`,
     coupleNames,
@@ -121,26 +121,26 @@ export function invitationEmail(params: {
 
   const html = layout({
     coupleNames,
-    title: "Vous êtes invités !",
+    title: "Tu es invité·e !",
     content: `
       <p style="margin:0 0 16px;line-height:1.6;color:${INK};font-size:15px;">Bonjour ${escapeHtml(firstName)},</p>
       <p style="margin:0 0 16px;line-height:1.6;color:${INK};font-size:15px;">
-        Nous nous marions${escapeHtml(dateLine)} et nous serions très heureux de vous compter parmi nous.
+        Nous nous marions${escapeHtml(dateLine)} et nous serions très heureux de t'avoir avec nous.
       </p>
       <p style="margin:0 0 20px;line-height:1.6;color:${INK};font-size:15px;">
-        Voici votre lien personnel : vous y retrouverez toutes les informations pratiques et pourrez nous confirmer votre présence.
+        Voici ton lien personnel : tu y retrouveras toutes les informations pratiques et tu pourras nous confirmer ta présence.
       </p>
       ${button(url, "Voir mon invitation")}
       <p style="margin:0;line-height:1.6;color:#a08d86;font-size:12px;text-align:center;">
-        Si le bouton ne fonctionne pas, copiez ce lien :<br />
+        Si le bouton ne fonctionne pas, copie ce lien :<br />
         <a href="${escapeHtml(url)}" style="color:${ROSE};word-break:break-all;">${escapeHtml(url)}</a>
       </p>
       <p style="margin:16px 0 0;line-height:1.6;color:#a08d86;font-size:12px;text-align:center;">
-        Ce lien vous est propre, merci de ne pas le transmettre.
+        Ce lien n'est qu'à toi, merci de ne pas le transmettre.
       </p>`,
   });
 
-  return { subject: `${coupleNames} — vous êtes invités !`, text, html };
+  return { subject: `${coupleNames} — tu es invité·e !`, text, html };
 }
 
 export function infoEmail(params: {
@@ -157,7 +157,7 @@ export function infoEmail(params: {
     "",
     body,
     "",
-    `Retrouvez toutes les informations sur votre page personnelle : ${url}`,
+    `Tu retrouves toutes les informations sur ta page personnelle : ${url}`,
     "",
     coupleNames,
   ].join("\n");
@@ -172,6 +172,38 @@ export function infoEmail(params: {
   });
 
   return { subject: `${coupleNames} — ${title}`, text, html };
+}
+
+/** Message libre écrit depuis /admin/emails, avec son propre objet. */
+export function customEmail(params: {
+  coupleNames: string;
+  firstName: string;
+  subject: string;
+  body: string;
+  url: string;
+}): RenderedEmail {
+  const { coupleNames, firstName, subject, body, url } = params;
+
+  const text = [
+    `Bonjour ${firstName},`,
+    "",
+    body,
+    "",
+    `Ta page personnelle : ${url}`,
+    "",
+    coupleNames,
+  ].join("\n");
+
+  const html = layout({
+    coupleNames,
+    title: subject,
+    content: `
+      <p style="margin:0 0 16px;line-height:1.6;color:${INK};font-size:15px;">Bonjour ${escapeHtml(firstName)},</p>
+      ${toParagraphs(body)}
+      ${button(url, "Voir ma page")}`,
+  });
+
+  return { subject, text, html };
 }
 
 export function testEmail(coupleNames: string): RenderedEmail {

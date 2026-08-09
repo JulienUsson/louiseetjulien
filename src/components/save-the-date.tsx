@@ -33,7 +33,7 @@ export function SaveTheDateCard({
 
       <div className="w-16 h-px bg-orange-300 mx-auto mb-6" />
       <p className="text-muted-foreground text-sm leading-relaxed mb-4">
-        Nous avons la joie de vous annoncer notre mariage le
+        Nous avons la joie de t&apos;annoncer notre mariage le
       </p>
       <p className="text-foreground font-medium text-2xl mt-4 mb-1">
         {dateLabel}

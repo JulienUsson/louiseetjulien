@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { MailWarning } from "lucide-react";
 
+import { BroadcastForm } from "@/components/admin/broadcast-form";
 import { TestEmailForm } from "@/components/admin/test-email-form";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -24,11 +25,18 @@ const dateTimeFormat = new Intl.DateTimeFormat("fr-FR", {
 });
 
 export default async function EmailsPage() {
-  const emails = await prisma.emailLog.findMany({
-    orderBy: { createdAt: "desc" },
-    take: 200,
-    include: { guest: { select: { id: true, firstName: true, lastName: true } } },
-  });
+  const [emails, guests] = await Promise.all([
+    prisma.emailLog.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 200,
+      include: {
+        guest: { select: { id: true, firstName: true, lastName: true } },
+      },
+    }),
+    prisma.guest.findMany({
+      select: { type: true, attending: true, email: true },
+    }),
+  ]);
 
   const failed = emails.filter((email) => email.status === "FAILED").length;
 
@@ -62,6 +70,14 @@ export default async function EmailsPage() {
           </AlertDescription>
         </Alert>
       )}
+
+      <BroadcastForm
+        guests={guests.map((guest) => ({
+          type: guest.type,
+          attending: guest.attending,
+          hasEmail: Boolean(guest.email),
+        }))}
+      />
 
       <TestEmailForm />
 

@@ -143,7 +143,7 @@ export function Envelope({ children }: { children: ReactNode }) {
               className={`absolute bottom-4 left-1/2 -translate-x-1/2 transition-opacity duration-300 ${isClosed ? "opacity-100" : "opacity-0"}`}
             >
               <p className="text-orange-800/60 text-xs tracking-wide animate-pulse">
-                Cliquez pour ouvrir
+                Clique pour ouvrir
               </p>
             </div>
           </div>

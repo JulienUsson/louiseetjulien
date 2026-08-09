@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
-import { CalendarHeart, Clock, Info, MapPin, PartyPopper } from "lucide-react";
+import { CalendarHeart, Clock, Info } from "lucide-react";
 
 import { RsvpForm } from "@/components/rsvp-form";
-import { Badge } from "@/components/ui/badge";
+import { VenueBlock } from "@/components/venue-map";
+import { WelcomeConfetti } from "@/components/welcome-confetti";
 import {
   Card,
   CardContent,
@@ -11,11 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { normalizeCode } from "@/lib/code-format";
-import {
-  GUEST_TYPE_DESCRIPTIONS,
-  GUEST_TYPE_LABELS,
-  type GuestType,
-} from "@/lib/constants";
+import { type GuestType } from "@/lib/constants";
 import { prisma } from "@/lib/db";
 import { formatDate, getSettings } from "@/lib/settings";
 
@@ -40,6 +37,7 @@ export default async function GuestPage({
   const guestType = (
     guest.type === "COCKTAIL" ? "COCKTAIL" : "FULL"
   ) satisfies GuestType;
+  const isCocktail = guestType === "COCKTAIL";
 
   const infos = await prisma.infoPost.findMany({
     where: {
@@ -51,9 +49,12 @@ export default async function GuestPage({
 
   const dateLabel = formatDate(settings.weddingDate);
   const deadlineLabel = formatDate(settings.rsvpDeadline, false);
+  const hasMairie = Boolean(settings.mairiePlace || settings.mairieAddress);
 
   return (
     <main className="bg-wedding min-h-screen">
+      <WelcomeConfetti />
+
       <div className="mx-auto w-full max-w-2xl px-4 py-12 space-y-8">
         <header className="text-center font-serif">
           <p className="text-orange-500 text-xs tracking-[0.3em] uppercase">
@@ -64,69 +65,73 @@ export default async function GuestPage({
           </h1>
           <div className="w-16 h-px bg-orange-300 mx-auto my-6" />
           <p className="font-sans text-muted-foreground">
-            Bonjour {guest.firstName}, nous serions très heureux de vous compter
-            parmi nous.
+            Bonjour {guest.firstName}, on serait vraiment heureux de t&apos;avoir
+            avec nous.
           </p>
-          <div className="mt-4 flex justify-center">
-            <Badge variant="secondary" className="gap-1.5">
-              <PartyPopper className="size-3.5" />
-              {GUEST_TYPE_LABELS[guestType]}
-            </Badge>
-          </div>
         </header>
 
         <Card>
           <CardHeader>
             <CardTitle className="font-serif text-xl">Le jour J</CardTitle>
             <CardDescription>
-              {GUEST_TYPE_DESCRIPTIONS[guestType]}
+              {isCocktail
+                ? "Tu es convié·e au vin d'honneur, juste après la cérémonie laïque."
+                : "Cérémonie laïque, vin d'honneur, dîner et soirée : on t'attend pour toute la journée."}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {dateLabel && (
-              <DetailRow icon={<CalendarHeart className="size-4" />} label="Date">
-                {dateLabel}
-              </DetailRow>
+              <div className="flex gap-3 text-sm">
+                <CalendarHeart className="mt-0.5 size-4 shrink-0 text-orange-500" />
+                <div>
+                  <div className="font-medium">Date</div>
+                  <div>{dateLabel}</div>
+                </div>
+              </div>
             )}
 
-            {settings.ceremonyPlace && (
-              <DetailRow icon={<MapPin className="size-4" />} label="Cérémonie">
-                {settings.ceremonyTime && `${settings.ceremonyTime} — `}
-                {settings.ceremonyPlace}
-                {settings.ceremonyAddress && (
-                  <span className="block text-muted-foreground">
-                    {settings.ceremonyAddress}
-                  </span>
-                )}
-              </DetailRow>
+            {hasMairie && (
+              <VenueBlock
+                label="Mairie"
+                time={settings.mairieTime}
+                place={settings.mairiePlace}
+                address={settings.mairieAddress}
+                coords={settings.mairieCoords}
+                note="Un moment plus intime — dis-nous plus bas si tu veux en être."
+              />
             )}
 
-            {settings.receptionPlace && (
-              <DetailRow
-                icon={<MapPin className="size-4" />}
-                label={
-                  guestType === "COCKTAIL" ? "Vin d'honneur" : "Réception"
-                }
-              >
-                {guestType === "COCKTAIL" && settings.cocktailTime
-                  ? `${settings.cocktailTime} — `
-                  : null}
-                {settings.receptionPlace}
-                {settings.receptionAddress && (
-                  <span className="block text-muted-foreground">
-                    {settings.receptionAddress}
-                  </span>
-                )}
-              </DetailRow>
-            )}
+            <VenueBlock
+              label="Cérémonie laïque"
+              time={settings.ceremonyTime}
+              place={settings.ceremonyPlace}
+              address={settings.ceremonyAddress}
+              coords={settings.ceremonyCoords}
+            />
+
+            <VenueBlock
+              label={isCocktail ? "Vin d'honneur" : "Réception"}
+              time={settings.cocktailTime}
+              place={settings.receptionPlace}
+              address={settings.receptionAddress}
+              coords={settings.receptionCoords}
+              note={
+                isCocktail
+                  ? undefined
+                  : "Le vin d'honneur, puis le dîner et la soirée."
+              }
+            />
 
             {deadlineLabel && (
-              <DetailRow
-                icon={<Clock className="size-4" />}
-                label="Réponse souhaitée avant le"
-              >
-                {deadlineLabel}
-              </DetailRow>
+              <div className="flex gap-3 text-sm">
+                <Clock className="mt-0.5 size-4 shrink-0 text-orange-500" />
+                <div>
+                  <div className="font-medium">
+                    Réponse souhaitée avant le
+                  </div>
+                  <div>{deadlineLabel}</div>
+                </div>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -156,21 +161,28 @@ export default async function GuestPage({
 
         <Card id="rsvp">
           <CardHeader>
-            <CardTitle className="font-serif text-xl">Votre réponse</CardTitle>
+            <CardTitle className="font-serif text-xl">Ta réponse</CardTitle>
             <CardDescription>
               {guest.respondedAt
-                ? "Vous avez déjà répondu — vous pouvez modifier votre réponse à tout moment."
-                : "Merci de nous confirmer votre présence, et de renseigner votre email pour recevoir les informations."}
+                ? "Tu as déjà répondu — tu peux modifier ta réponse quand tu veux."
+                : "Confirme-nous ta présence, et laisse ton email pour recevoir les informations."}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <RsvpForm
               code={guest.code}
               maxCompanions={guest.maxCompanions}
+              askMairie={hasMairie}
+              mairieLabel={
+                settings.mairieTime
+                  ? `à la mairie (${settings.mairieTime})`
+                  : "à la mairie"
+              }
               defaultValues={{
                 email: guest.email ?? "",
                 phone: guest.phone ?? "",
                 attending: guest.attending,
+                attendingMairie: guest.attendingMairie,
                 dietary: guest.dietary ?? "",
                 message: guest.message ?? "",
                 companions: guest.companions.map((companion) => ({
@@ -186,7 +198,7 @@ export default async function GuestPage({
 
         {settings.contactEmail && (
           <p className="text-center text-sm text-muted-foreground">
-            Une question ? Écrivez-nous à{" "}
+            Une question ? Écris-nous à{" "}
             <a
               className="text-rose-600 underline underline-offset-4"
               href={`mailto:${settings.contactEmail}`}
@@ -198,25 +210,5 @@ export default async function GuestPage({
         )}
       </div>
     </main>
-  );
-}
-
-function DetailRow({
-  icon,
-  label,
-  children,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex gap-3">
-      <div className="mt-0.5 text-orange-500">{icon}</div>
-      <div className="text-sm">
-        <div className="font-medium">{label}</div>
-        <div>{children}</div>
-      </div>
-    </div>
   );
 }

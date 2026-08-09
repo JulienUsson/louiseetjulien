@@ -8,7 +8,13 @@ import { requireAdmin } from "@/lib/auth";
 import { generateCode, guestUrl } from "@/lib/codes";
 import { AUDIENCES, GUEST_TYPES, audienceMatches } from "@/lib/constants";
 import { prisma } from "@/lib/db";
-import { infoEmail, invitationEmail, testEmail } from "@/lib/email-templates";
+import {
+  customEmail,
+  infoEmail,
+  invitationEmail,
+  testEmail,
+} from "@/lib/email-templates";
+import { geocodeAddress } from "@/lib/geocode";
 import { sendMail } from "@/lib/mail";
 import {
   SETTING_DEFAULTS,
@@ -16,9 +22,16 @@ import {
   getSettings,
   saveSettings,
   type SettingKey,
+  type Settings,
 } from "@/lib/settings";
 
-export type ActionResult = { ok: boolean; error?: string; message?: string };
+export type ActionResult = {
+  ok: boolean;
+  error?: string;
+  message?: string;
+  /** Renseigné par `geocodeSetting` uniquement. */
+  coords?: string;
+};
 
 function fail(error: string): ActionResult {
   return { ok: false, error };
@@ -331,6 +344,91 @@ export async function sendInfoToGuests(
   };
 }
 
+const RSVP_STATES = ["YES", "NO", "PENDING"] as const;
+
+const customEmailSchema = z.object({
+  subject: z.string().trim().min(1, "L'objet est obligatoire.").max(200),
+  body: z.string().trim().min(1, "Le message est obligatoire.").max(10000),
+  /** Vide = aucune restriction sur ce critère. */
+  types: z.array(z.enum(GUEST_TYPES)).default([]),
+  states: z.array(z.enum(RSVP_STATES)).default([]),
+});
+
+export type CustomEmailInput = z.input<typeof customEmailSchema>;
+
+/** Traduit un état de réponse en filtre Prisma sur `attending`. */
+function attendingFilter(state: (typeof RSVP_STATES)[number]) {
+  if (state === "YES") return { attending: true };
+  if (state === "NO") return { attending: false };
+  return { attending: null };
+}
+
+/**
+ * Écrit un message libre à une partie des invités, ciblée par formule et par
+ * état de réponse — pour relancer les silencieux ou n'écrire qu'aux présents.
+ */
+export async function sendCustomEmail(
+  input: CustomEmailInput,
+): Promise<ActionResult> {
+  await requireAdmin();
+
+  const parsed = customEmailSchema.safeParse(input);
+  if (!parsed.success) return fail(parsed.error.issues[0].message);
+
+  const { subject, body, types, states } = parsed.data;
+
+  const recipients = await prisma.guest.findMany({
+    where: {
+      email: { not: null },
+      ...(types.length > 0 ? { type: { in: [...types] } } : {}),
+      ...(states.length > 0
+        ? { OR: states.map(attendingFilter) }
+        : {}),
+    },
+  });
+
+  if (recipients.length === 0) {
+    return fail(
+      "Aucun invité ne correspond à ces filtres, ou aucun n'a renseigné son email.",
+    );
+  }
+
+  const settings = await getSettings();
+  let sent = 0;
+  let firstError: string | undefined;
+
+  for (const guest of recipients) {
+    const email = customEmail({
+      coupleNames: settings.coupleNames,
+      firstName: guest.firstName,
+      subject,
+      body,
+      url: guestUrl(guest.code),
+    });
+
+    const result = await sendMail({
+      ...email,
+      to: guest.email!,
+      kind: "INFO",
+      guestId: guest.id,
+    });
+
+    if (result.ok) sent++;
+    else firstError ??= result.error;
+  }
+
+  revalidatePath("/admin/emails");
+
+  if (sent === 0) return fail(firstError ?? "Aucun email n'a pu être envoyé.");
+
+  return {
+    ok: true,
+    message: `Message envoyé à ${sent} invité(s)${
+      firstError ? ` — ${recipients.length - sent} en échec : ${firstError}` : ""
+    }.`,
+  };
+}
+
 export async function sendTestEmail(to: string): Promise<ActionResult> {
   await requireAdmin();
 
@@ -432,13 +530,13 @@ export async function toggleInfoPublished(
 // --------------------------------------------------------------------------
 
 export async function updateSettings(
-  formData: FormData,
+  input: Partial<Settings>,
 ): Promise<ActionResult> {
   await requireAdmin();
 
   const values: Partial<Record<SettingKey, string>> = {};
   for (const key of Object.keys(SETTING_DEFAULTS) as SettingKey[]) {
-    const value = formData.get(key);
+    const value = input[key];
     if (typeof value === "string") values[key] = value.trim();
   }
 
@@ -447,6 +545,16 @@ export async function updateSettings(
   revalidatePath("/admin/reglages");
   revalidatePath("/", "layout");
   return { ok: true, message: "Réglages enregistrés." };
+}
+
+/** Convertit une adresse en coordonnées, pour remplir le champ de la carte. */
+export async function geocodeSetting(address: string): Promise<ActionResult> {
+  await requireAdmin();
+
+  const result = await geocodeAddress(address);
+  if (!result.ok) return fail(result.error);
+
+  return { ok: true, coords: result.coords, message: result.label };
 }
 
 // --------------------------------------------------------------------------

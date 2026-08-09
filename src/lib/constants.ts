@@ -11,9 +11,14 @@ export const GUEST_TYPE_LABELS: Record<GuestType, string> = {
   COCKTAIL: "Vin d'honneur",
 };
 
+/**
+ * Rappel de ce que couvre chaque formule, pour le back-office. Côté invité,
+ * la formule est dite en toutes lettres plutôt qu'affichée comme une
+ * étiquette : personne n'a envie de se voir coller un tampon « vin d'honneur ».
+ */
 export const GUEST_TYPE_DESCRIPTIONS: Record<GuestType, string> = {
-  FULL: "Cérémonie, vin d'honneur, dîner et soirée.",
-  COCKTAIL: "Cérémonie et vin d'honneur.",
+  FULL: "Cérémonie laïque, vin d'honneur, dîner et soirée.",
+  COCKTAIL: "Cérémonie laïque et vin d'honneur.",
 };
 
 export const AUDIENCES = ["ALL", "FULL", "COCKTAIL"] as const;
