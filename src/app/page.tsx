@@ -3,6 +3,10 @@ import { SaveTheDateCard } from "@/components/save-the-date";
 import { CodeForm } from "@/components/code-form";
 import { formatDate, getSettings } from "@/lib/settings";
 
+// Rendu à la demande : la page « Save the Date » lit les réglages en base à
+// chaque visite, pour refléter immédiatement les changements du back-office.
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
   const settings = await getSettings();
   const dateLabel = formatDate(settings.weddingDate, false) || "à venir";
