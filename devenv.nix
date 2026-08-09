@@ -13,6 +13,9 @@
         DATABASE_URL = "file:./dev.db";
         APP_URL = "http://localhost:3000";
         ADMIN_PASSWORD = "admin";
+        # Valeur fixe et non secrète : sans elle l'app tire un secret au
+        # hasard à chaque démarrage, ce qui déconnecte le back-office.
+        SESSION_SECRET = "dev-only-session-secret-0123456789";
       };
     };
     production.module = {
@@ -20,6 +23,7 @@
         SECRETSPEC_PROFILE = "production";
         APP_URL = "https://louiseetjulien.fr";
         ADMIN_PASSWORD = config.secretspec.secrets.ADMIN_PASSWORD;
+        SESSION_SECRET = config.secretspec.secrets.SESSION_SECRET;
         DATABASE_URL = "file:../mariage.db";
         NODE_ENV = "production";
         SMTP_HOST = "smtp.tem.scaleway.com";

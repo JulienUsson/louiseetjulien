@@ -88,15 +88,32 @@ L'application tourne en Node derrière un reverse proxy (nginx, Caddy…), avec
 la base SQLite sur un disque persistant.
 
 ```bash
-pnpm install --frozen-lockfile
+pnpm install --frozen-lockfile --prod=false
 pnpm build
 pnpm db:deploy          # applique les migrations sur la base de production
 pnpm start              # écoute sur le port 3000, surchargeable avec PORT
 ```
 
-Variables d'environnement : voir `.env.example`. En production, `APP_URL` doit
-contenir l'URL publique du site (sinon les liens envoyés par email pointent
-vers `localhost`), et `SESSION_SECRET` est obligatoire.
+`--prod=false` n'est pas décoratif : pnpm n'installe pas les
+`devDependencies` quand `NODE_ENV=production`, or le build en a besoin — la
+CLI Prisma (appelée par le `postinstall`), TypeScript et Tailwind y sont.
+Sans ce drapeau, l'installation échoue dès le `postinstall`.
+
+### Variables d'environnement
+
+Deux façons de les fournir, selon comment vous déployez.
+
+- **Sous devenv** — les profils `dev` et `production` de `devenv.nix` les
+  exportent, les secrets de production venant de secretspec
+  (`secretspec.toml`). C'est la voie normale : entrez dans le shell avec
+  `devenv shell --profile production`. Le fichier `.env` n'a alors aucun
+  effet, `dotenv` n'écrasant jamais une variable déjà définie.
+- **Sans devenv** — copiez `.env.example` en `.env` et renseignez-le.
+
+Dans les deux cas, `APP_URL` doit contenir l'URL publique du site (sinon les
+liens envoyés par email pointent vers `localhost`) et `SESSION_SECRET` est
+obligatoire : sans lui, l'application refuse de créer une session en
+production.
 
 ### Exemple d'unité systemd
 
