@@ -2,7 +2,7 @@
 set -euo pipefail
 
 DB_PATH="${DB_PATH:?DB_PATH doit désigner la base SQLite}"
-REMOTE="${REMOTE:-gdrive:louiseetjulien}"
+REMOTE="${REMOTE:-scw:louiseetjulien-sauvegardes}"
 KEEP_DAYS="${KEEP_DAYS:-30}"
 
 tmp="$(mktemp -d)"

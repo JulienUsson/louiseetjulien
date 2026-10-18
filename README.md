@@ -245,42 +245,53 @@ workflow »).
 
 Toutes les données tiennent dans le fichier SQLite désigné par `DATABASE_URL`.
 `deploy/backup.sh` en fait une copie à chaud (sans arrêter l'application),
-vérifie son intégrité, la compresse et l'envoie sur Google Drive avec
-[rclone](https://rclone.org). Les copies de plus de 30 jours sont supprimées du
-Drive.
+vérifie son intégrité, la compresse et l'envoie dans un bucket Scaleway Object
+Storage avec [rclone](https://rclone.org). Les copies de plus de 30 jours sont
+supprimées du bucket.
 
-| Variable    | Défaut                  | Rôle                                  |
-| ----------- | ----------------------- | ------------------------------------- |
-| `DB_PATH`   | —                       | Chemin de la base SQLite              |
-| `REMOTE`    | `gdrive:louiseetjulien` | Remote rclone et dossier de destination |
-| `KEEP_DAYS` | `30`                    | Durée de conservation sur le Drive    |
+| Variable    | Défaut                           | Rôle                                 |
+| ----------- | -------------------------------- | ------------------------------------ |
+| `DB_PATH`   | —                                | Chemin de la base SQLite             |
+| `REMOTE`    | `scw:louiseetjulien-sauvegardes` | Remote rclone et bucket de destination |
+| `KEEP_DAYS` | `30`                             | Durée de conservation dans le bucket |
+
+Le remote rclone `scw` n'est pas déclaré dans un `rclone.conf` : il est décrit
+par les variables `RCLONE_CONFIG_SCW_*` de `/etc/louiseetjulien/backup.env`
+(modèle : `deploy/backup.env.example`), que l'unité systemd charge.
 
 Un timer systemd la déclenche chaque nuit vers 3 h ; si le Pi était éteint à
 cette heure-là, elle part à son redémarrage.
 
-Mise en place, une fois, sur le Pi :
+Mise en place, une fois :
 
-1. Installer rclone (`sudo apt install rclone`) et, **en tant qu'utilisateur
-   `louiseetjulien`**, lancer `rclone config` : nouveau remote nommé `gdrive`,
-   type `drive`, scope `drive.file` (rclone ne voit que les fichiers qu'il a
-   créés). Le Pi n'ayant pas de navigateur, répondre *No* à « Use web
-   browser » et exécuter la commande `rclone authorize "drive" ...` proposée
-   sur un ordinateur qui en a un, puis recoller le jeton obtenu.
-2. Tester : `DB_PATH=/srv/mariage.db /srv/louiseetjulien/deploy/backup.sh`, et
-   vérifier l'apparition du dossier `louiseetjulien` dans le Drive.
-3. Activer le timer :
+1. Dans la console Scaleway, créer un bucket **privé** (par exemple
+   `louiseetjulien-sauvegardes`, région Paris), puis une application IAM
+   dédiée, avec une politique limitée à Object Storage sur ce projet, et une
+   clé d'API pour elle.
+2. Sur le Pi, installer rclone (`sudo apt install rclone`) et renseigner les
+   secrets :
+
+   ```bash
+   sudo install -d -m 755 /etc/louiseetjulien
+   sudo install -m 600 -o louiseetjulien /srv/louiseetjulien/deploy/backup.env.example /etc/louiseetjulien/backup.env
+   sudoedit /etc/louiseetjulien/backup.env   # clés d'API, et REMOTE si le bucket a un autre nom
+   ```
+
+3. Installer les unités, lancer une première sauvegarde et activer le timer :
 
    ```bash
    sudo cp /srv/louiseetjulien/deploy/louiseetjulien-backup.{service,timer} /etc/systemd/system/
    sudo systemctl daemon-reload
+   sudo systemctl start louiseetjulien-backup    # puis vérifier le fichier dans le bucket
    sudo systemctl enable --now louiseetjulien-backup.timer
    ```
 
 `systemctl list-timers` affiche la prochaine exécution,
 `journalctl -u louiseetjulien-backup` le résultat des précédentes.
 
-Pour restaurer : arrêter le service, décompresser une copie
-(`gunzip mariage-AAAA-MM-JJ.db.gz`) à la place de `/srv/mariage.db`, redémarrer.
+Pour restaurer : télécharger une copie depuis la console Scaleway, arrêter le
+service, la décompresser (`gunzip mariage-AAAA-MM-JJ.db.gz`) à la place de
+`/srv/mariage.db`, redémarrer.
 
 ## Modèle de données
 
