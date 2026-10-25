@@ -329,6 +329,10 @@ export function RsvpForm({
               <legend className="text-sm font-medium">
                 Souhaites-tu un logement pour la nuit ?
               </legend>
+              <p className="text-xs text-muted-foreground">
+                Le nombre de places au château est limité et les logements
+                seront partagés.
+              </p>
               <div className="grid gap-3 sm:grid-cols-2">
                 {LODGING_CHOICES.map((choice) => (
                   <button
