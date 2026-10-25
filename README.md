@@ -208,6 +208,13 @@ applique les migrations, puis redémarre le service. Le site reste en ligne
 pendant le build ; seul le redémarrage final coupe quelques secondes.
 `APP_DIR` et `SERVICE` surchargent le dossier et le nom du service.
 
+Avec 1 Go de RAM, le build frôle la saturation : le Pi swappe au point de se
+figer, et le watchdog matériel de Raspberry Pi OS le redémarre s'il ne répond
+plus pendant une minute. `deploy.sh` allège donc le build : `SKIP_TYPECHECK=1`
+saute la vérification des types (déjà faite par le job `check`, dont dépend
+`deploy`), et `NODE_OPTIONS` vaut `--max-old-space-size=1024` sauf s'il est
+déjà défini.
+
 Mise en place, une fois, sur le Pi :
 
 ```bash

@@ -11,7 +11,7 @@ if [ -f "$APP_DIR/.env" ]; then
 fi
 
 pnpm install --frozen-lockfile --prod=false
-pnpm build
+SKIP_TYPECHECK=1 NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=1024}" pnpm build
 
 mkdir -p "$APP_DIR"
 rsync -a --delete \
