@@ -11,7 +11,8 @@ Deux faces :
   invité accessible via un lien contenant un code aléatoire (`/i/<code>`).
   Pas de compte, pas de mot de passe : le lien fait office d'identification.
   L'invité y renseigne lui-même son email, confirme sa présence, déclare ses
-  accompagnants et ses allergies.
+  accompagnants, ses allergies ou intolérances, son choix de logement et une
+  musique qu'il aimerait entendre.
 - **Côté mariés** — un back-office (`/admin`) protégé par un mot de passe unique
   pour créer les invités, générer et envoyer les liens, publier des
   informations et suivre les réponses.
@@ -66,6 +67,11 @@ Le passage en mairie étant plus intime, chaque invité indique séparément s'i
 souhaite y assister — la question n'apparaît que si un lieu de mairie est
 renseigné, et seulement pour ceux qui viennent. Le tableau de bord en donne
 l'effectif, accompagnants compris.
+
+Les invités à la journée complète indiquent aussi où ils dormiront : logement
+au château (aux alentours de 50 € par personne), dans la salle (avec leur
+matelas), sous leur tente, ou ailleurs. Le tableau de bord en donne la
+répartition, accompagnants compris.
 
 Chaque lieu accepte des coordonnées `latitude,longitude` qui déclenchent
 l'affichage d'une carte OpenStreetMap sur la page des invités. Le bouton
@@ -303,8 +309,8 @@ service, la décompresser (`gunzip mariage-AAAA-MM-JJ.db.gz`) à la place de
 ## Modèle de données
 
 - `Guest` — un invité = une invitation = un lien. Porte le code, le type,
-  l'email (renseigné par l'invité), la réponse, la présence à la mairie et le
-  nombre d'accompagnants autorisés.
+  l'email (renseigné par l'invité), la réponse, la présence à la mairie, le
+  logement, la musique souhaitée et le nombre d'accompagnants autorisés.
 - `Companion` — les accompagnants déclarés par l'invité.
 - `InfoPost` — une information, son audience et son état de publication.
 - `EmailLog` — la trace de chaque envoi, réussi ou non.

@@ -158,6 +158,31 @@ export function formatDate(iso: string, withWeekday = true): string {
   });
 }
 
+export function capitalize(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+/** "2027-07-10" → "10/07/2027", ou "" si vide/invalide. */
+export function isoToFrenchDate(iso: string): string {
+  const match = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return match ? `${match[3]}/${match[2]}/${match[1]}` : "";
+}
+
+/** "10/07/2027" → "2027-07-10", "" si vide, null si la date est invalide. */
+export function frenchDateToIso(value: string): string | null {
+  const text = value.trim();
+  if (!text) return "";
+
+  const match = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!match) return null;
+
+  const [day, month, year] = [Number(match[1]), Number(match[2]), Number(match[3])];
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return null;
+
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
 /**
  * Les coordonnées sont stockées en "lat,lon" : une seule case en base, et un
  * format directement recopiable depuis OpenStreetMap ou Google Maps.

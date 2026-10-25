@@ -12,9 +12,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { isSameVenue, normalizeCode } from "@/lib/code-format";
-import { type GuestType } from "@/lib/constants";
+import { LODGINGS, type GuestType, type Lodging } from "@/lib/constants";
 import { prisma } from "@/lib/db";
-import { formatDate, getSettings } from "@/lib/settings";
+import { capitalize, formatDate, getSettings } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 
@@ -47,8 +47,8 @@ export default async function GuestPage({
     orderBy: [{ pinned: "desc" }, { position: "asc" }, { createdAt: "asc" }],
   });
 
-  const dateLabel = formatDate(settings.weddingDate);
-  const deadlineLabel = formatDate(settings.rsvpDeadline, false);
+  const dateLabel = capitalize(formatDate(settings.weddingDate));
+  const deadlineLabel = capitalize(formatDate(settings.rsvpDeadline));
   const hasMairie = Boolean(settings.mairiePlace || settings.mairieAddress);
 
   // Quand la réception se tient là où a lieu la cérémonie laïque, on n'affiche
@@ -208,12 +208,17 @@ export default async function GuestPage({
                   ? `à la mairie (${settings.mairieTime})`
                   : "à la mairie"
               }
+              askLodging={!isCocktail}
               defaultValues={{
                 email: guest.email ?? "",
                 phone: guest.phone ?? "",
                 attending: guest.attending,
                 attendingMairie: guest.attendingMairie,
                 dietary: guest.dietary ?? "",
+                lodging: LODGINGS.includes(guest.lodging as Lodging)
+                  ? (guest.lodging as Lodging)
+                  : null,
+                songRequest: guest.songRequest ?? "",
                 message: guest.message ?? "",
                 companions: guest.companions.map((companion) => ({
                   firstName: companion.firstName,

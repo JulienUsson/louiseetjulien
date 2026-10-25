@@ -10,6 +10,7 @@ export {
   SETTING_DEFAULTS,
   SETTING_GROUPS,
   VENUES,
+  capitalize,
   formatDate,
   osmEmbedUrl,
   osmLinkUrl,

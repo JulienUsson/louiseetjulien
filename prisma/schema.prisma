@@ -41,8 +41,13 @@ model Guest {
   /// Présence à la mairie, plus intime que le reste de la journée : posée
   /// séparément, et null tant que l'invité n'a pas répondu.
   attendingMairie Boolean?
-  /// Régime alimentaire / allergies de l'invité principal.
+  /// Régime alimentaire / allergies / intolérances de l'invité principal.
   dietary String?
+  /// CHATEAU, HALL, TENT ou NONE (voir src/lib/constants.ts), null tant que
+  /// l'invité n'a pas répondu. Ne concerne que les invités à la journée.
+  lodging String?
+  /// Morceau que l'invité aimerait entendre pendant la soirée.
+  songRequest String?
   /// Mot libre laissé aux mariés.
   message String?
 
