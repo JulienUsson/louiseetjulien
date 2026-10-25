@@ -22,8 +22,10 @@ import { guestUrl } from "@/lib/codes";
 import {
   EMAIL_KIND_LABELS,
   GUEST_TYPE_LABELS,
+  LODGING_LABELS,
   type EmailKind,
   type GuestType,
+  type Lodging,
 } from "@/lib/constants";
 import { prisma } from "@/lib/db";
 import { invitationMessage } from "@/lib/invitation-message";
@@ -201,6 +203,20 @@ export default async function GuestDetailPage({
                   <span className="text-muted-foreground">Rien de signalé</span>
                 )}
               </Field>
+
+              {guest.attending && guest.type === "FULL" && (
+                <Field label="Logement">
+                  {guest.lodging ? (
+                    (LODGING_LABELS[guest.lodging as Lodging] ?? guest.lodging)
+                  ) : (
+                    <span className="text-muted-foreground">Non précisé</span>
+                  )}
+                </Field>
+              )}
+
+              {guest.songRequest && (
+                <Field label="Musique souhaitée">{guest.songRequest}</Field>
+              )}
 
               {guest.companions.length > 0 && (
                 <>

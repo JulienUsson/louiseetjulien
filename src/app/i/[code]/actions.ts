@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { normalizeCode } from "@/lib/code-format";
+import { LODGINGS } from "@/lib/constants";
 import { prisma } from "@/lib/db";
 
 const companionSchema = z.object({
@@ -20,6 +21,8 @@ const rsvpSchema = z.object({
   attending: z.boolean(),
   attendingMairie: z.boolean().optional().default(false),
   dietary: z.string().trim().max(300).optional().default(""),
+  lodging: z.enum(LODGINGS).nullable().optional().default(null),
+  songRequest: z.string().trim().max(200).optional().default(""),
   message: z.string().trim().max(2000).optional().default(""),
   companions: z.array(companionSchema).default([]),
 });
@@ -67,6 +70,10 @@ export async function submitRsvp(input: RsvpInput): Promise<RsvpState> {
         // La question mairie ne se pose pas si l'invité ne vient pas.
         attendingMairie: data.attending ? data.attendingMairie : false,
         dietary: data.attending ? data.dietary || null : null,
+        // Seuls les invités à la journée complète restent dormir.
+        lodging:
+          data.attending && guest.type === "FULL" ? data.lodging : null,
+        songRequest: data.attending ? data.songRequest || null : null,
         message: data.message || null,
         companions: {
           create: companions.map((companion) => ({

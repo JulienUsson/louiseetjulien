@@ -1,5 +1,6 @@
 import Link from "next/link";
 import {
+  BedDouble,
   CheckCircle2,
   CircleHelp,
   Landmark,
@@ -17,7 +18,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { GUEST_TYPE_LABELS } from "@/lib/constants";
+import {
+  GUEST_TYPE_LABELS,
+  LODGING_LABELS,
+  LODGINGS,
+} from "@/lib/constants";
 import { prisma } from "@/lib/db";
 import { isMailConfigured } from "@/lib/mail";
 import { formatDate, getSettings } from "@/lib/settings";
@@ -31,6 +36,7 @@ export default async function DashboardPage() {
         type: true,
         attending: true,
         attendingMairie: true,
+        lodging: true,
         email: true,
         _count: { select: { companions: true } },
       },
@@ -57,6 +63,11 @@ export default async function DashboardPage() {
   const mairie = yes
     .filter((guest) => guest.attendingMairie)
     .reduce((total, guest) => total + 1 + guest._count.companions, 0);
+
+  const lodgingHeadcount = (lodging: string | null) =>
+    yes
+      .filter((guest) => guest.type === "FULL" && guest.lodging === lodging)
+      .reduce((total, guest) => total + 1 + guest._count.companions, 0);
 
   const dateLabel = formatDate(settings.weddingDate);
 
@@ -149,6 +160,32 @@ export default async function DashboardPage() {
             <Button asChild size="sm" variant="outline">
               <Link href="/admin/emails">Voir les envois</Link>
             </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <BedDouble className="size-4 text-orange-500" />
+              Logement
+            </CardTitle>
+            <CardDescription>
+              Invités présents à la journée complète, accompagnants compris.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            {LODGINGS.map((lodging) => (
+              <div key={lodging} className="flex justify-between">
+                <span>{LODGING_LABELS[lodging]}</span>
+                <span className="font-medium">
+                  {lodgingHeadcount(lodging)} personne(s)
+                </span>
+              </div>
+            ))}
+            <div className="flex justify-between border-t pt-2 text-muted-foreground">
+              <span>Non précisé</span>
+              <span>{lodgingHeadcount(null)} personne(s)</span>
+            </div>
           </CardContent>
         </Card>
       </div>

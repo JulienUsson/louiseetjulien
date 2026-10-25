@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Check, Loader2, Plus, Trash2, X } from "lucide-react";
+import { Check, Loader2, Music, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { submitRsvp } from "@/app/i/[code]/actions";
@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { type Lodging } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 export type CompanionDraft = {
@@ -25,16 +26,43 @@ export type RsvpFormProps = {
   /** La question mairie n'a de sens que si un lieu de mairie est renseigné. */
   askMairie: boolean;
   mairieLabel: string;
+  /** Seuls les invités à la journée complète restent dormir sur place. */
+  askLodging: boolean;
   defaultValues: {
     email: string;
     phone: string;
     attending: boolean | null;
     attendingMairie: boolean | null;
     dietary: string;
+    lodging: Lodging | null;
+    songRequest: string;
     message: string;
     companions: CompanionDraft[];
   };
 };
+
+const LODGING_CHOICES: { value: Lodging; label: string; hint: string }[] = [
+  {
+    value: "CHATEAU",
+    label: "Oui, un logement au château",
+    hint: "Aux alentours de 50 € par personne.",
+  },
+  {
+    value: "HALL",
+    label: "Je dormirai dans la salle",
+    hint: "Pense à apporter ton matelas.",
+  },
+  {
+    value: "TENT",
+    label: "Je viendrai avec ma tente",
+    hint: "Pense à apporter ta tente.",
+  },
+  {
+    value: "NONE",
+    label: "Non merci",
+    hint: "Je rentre ou je dors ailleurs.",
+  },
+];
 
 const emptyCompanion: CompanionDraft = {
   firstName: "",
@@ -48,6 +76,7 @@ export function RsvpForm({
   maxCompanions,
   askMairie,
   mairieLabel,
+  askLodging,
   defaultValues,
 }: RsvpFormProps) {
   const [attending, setAttending] = useState<boolean | null>(
@@ -59,6 +88,10 @@ export function RsvpForm({
   const [email, setEmail] = useState(defaultValues.email);
   const [phone, setPhone] = useState(defaultValues.phone);
   const [dietary, setDietary] = useState(defaultValues.dietary);
+  const [lodging, setLodging] = useState<Lodging | null>(
+    defaultValues.lodging,
+  );
+  const [songRequest, setSongRequest] = useState(defaultValues.songRequest);
   const [message, setMessage] = useState(defaultValues.message);
   const [companions, setCompanions] = useState<CompanionDraft[]>(
     defaultValues.companions,
@@ -89,6 +122,8 @@ export function RsvpForm({
         attending,
         attendingMairie: askMairie ? attendingMairie : false,
         dietary,
+        lodging: askLodging ? lodging : null,
+        songRequest,
         message,
         companions,
       });
@@ -186,12 +221,14 @@ export function RsvpForm({
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="dietary">Allergies ou régime alimentaire</Label>
+            <Label htmlFor="dietary">
+              Allergies, intolérances ou régime alimentaire
+            </Label>
             <Input
               id="dietary"
               value={dietary}
               onChange={(event) => setDietary(event.target.value)}
-              placeholder="Végétarien, sans gluten, allergie aux fruits à coque…"
+              placeholder="Végétarien, intolérance au lactose, sans gluten, allergie aux fruits à coque…"
             />
           </div>
 
@@ -248,7 +285,7 @@ export function RsvpForm({
                     onChange={(event) =>
                       updateCompanion(index, { dietary: event.target.value })
                     }
-                    placeholder="Allergies ou régime alimentaire"
+                    placeholder="Allergies, intolérances ou régime alimentaire"
                     aria-label={`Régime de l'accompagnant ${index + 1}`}
                   />
                   <div className="flex items-center justify-between">
@@ -286,6 +323,51 @@ export function RsvpForm({
               ))}
             </div>
           )}
+
+          {askLodging && (
+            <fieldset className="space-y-3">
+              <legend className="text-sm font-medium">
+                Souhaites-tu un logement pour la nuit ?
+              </legend>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {LODGING_CHOICES.map((choice) => (
+                  <button
+                    key={choice.value}
+                    type="button"
+                    onClick={() => setLodging(choice.value)}
+                    aria-pressed={lodging === choice.value}
+                    className={cn(
+                      "rounded-lg border-2 px-4 py-3 text-left transition-colors",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                      lodging === choice.value
+                        ? "border-rose-500 bg-rose-50 text-rose-700"
+                        : "border-border bg-card hover:bg-accent",
+                    )}
+                  >
+                    <span className="block text-sm font-medium">
+                      {choice.label}
+                    </span>
+                    <span className="mt-0.5 block text-xs text-muted-foreground">
+                      {choice.hint}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+          )}
+
+          <div className="space-y-2">
+            <Label htmlFor="songRequest" className="flex items-center gap-1.5">
+              <Music className="size-4 text-orange-500" />
+              Une musique que tu aimerais entendre ?
+            </Label>
+            <Input
+              id="songRequest"
+              value={songRequest}
+              onChange={(event) => setSongRequest(event.target.value)}
+              placeholder="Titre et artiste"
+            />
+          </div>
         </>
       )}
 

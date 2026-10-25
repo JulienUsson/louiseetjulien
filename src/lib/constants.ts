@@ -21,7 +21,17 @@ export const GUEST_TYPE_DESCRIPTIONS: Record<GuestType, string> = {
   COCKTAIL: "Cérémonie laïque et vin d'honneur.",
 };
 
-export const AUDIENCES = ["ALL", "FULL", "COCKTAIL"] as const;
+export const LODGINGS = ["CHATEAU", "HALL", "TENT", "NONE"] as const;
+export type Lodging = (typeof LODGINGS)[number];
+
+export const LODGING_LABELS: Record<Lodging, string> = {
+  CHATEAU: "Logement au château",
+  HALL: "Dans la salle (matelas)",
+  TENT: "En tente",
+  NONE: "Pas besoin",
+};
+
+export const AUDIENCES =["ALL", "FULL", "COCKTAIL"] as const;
 export type Audience = (typeof AUDIENCES)[number];
 
 export const AUDIENCE_LABELS: Record<Audience, string> = {
