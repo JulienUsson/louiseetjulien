@@ -178,7 +178,7 @@ After=network.target
 
 [Service]
 Type=simple
-User=www-data
+User=louiseetjulien
 WorkingDirectory=/srv/louiseetjulien
 EnvironmentFile=/srv/louiseetjulien/.env
 ExecStart=/usr/bin/pnpm start
@@ -188,14 +188,110 @@ Restart=on-failure
 WantedBy=multi-user.target
 ```
 
+### Livraison continue
+
+`.github/workflows/deploy.yml` tourne à chaque push et pull request :
+
+1. **check** — lint et build sur un runner GitHub, pour ne jamais livrer un
+   commit qui ne compile pas.
+2. **deploy** — sur `master` uniquement, une fois `check` au vert : un runner
+   GitHub **auto-hébergé sur le Raspberry Pi** exécute `deploy/deploy.sh`.
+
+Le runner tourne sur le Pi lui-même : il va chercher le travail chez GitHub,
+aucun port n'est à ouvrir et aucune clé SSH ne transite par GitHub. Le build se
+fait aussi sur le Pi, avec son Node : `better-sqlite3` est un module natif, il
+doit être compilé pour l'architecture et la version de Node qui l'exécutent.
+
+`deploy/deploy.sh` construit le site dans l'espace de travail du runner, le
+recopie dans `/srv/louiseetjulien` (sans toucher à `.env` ni aux bases),
+applique les migrations, puis redémarre le service. Le site reste en ligne
+pendant le build ; seul le redémarrage final coupe quelques secondes.
+`APP_DIR` et `SERVICE` surchargent le dossier et le nom du service.
+
+Mise en place, une fois, sur le Pi :
+
+```bash
+sudo apt install rsync sqlite3
+sudo useradd --system --create-home --shell /bin/bash louiseetjulien
+sudo mkdir -p /srv/louiseetjulien && sudo chown louiseetjulien: /srv /srv/louiseetjulien
+# .env de production dans /srv/louiseetjulien/.env, avec DATABASE_URL=file:../mariage.db
+# unité systemd ci-dessus dans /etc/systemd/system/louiseetjulien.service
+sudo systemctl enable louiseetjulien
+echo 'louiseetjulien ALL=(root) NOPASSWD: /usr/bin/systemctl restart louiseetjulien' \
+  | sudo tee /etc/sudoers.d/louiseetjulien
+```
+
+Node 22 et pnpm doivent être installés pour tout le système (`/usr/bin/node`,
+`/usr/bin/pnpm`) : le runner et le service doivent utiliser le même Node.
+
+Puis le runner : sur GitHub, *Settings → Actions → Runners → New self-hosted
+runner*, choisir *Linux / ARM64*, et suivre les commandes affichées **en tant
+qu'utilisateur `louiseetjulien`**, en ajoutant le label `louiseetjulien` quand
+`config.sh` le demande. L'installer ensuite comme service pour qu'il survive aux
+redémarrages :
+
+```bash
+sudo ./svc.sh install louiseetjulien && sudo ./svc.sh start
+```
+
+Le dépôt étant public, une pull request venue d'un fork peut modifier le
+workflow et viser le runner du Pi. Dans *Settings → Actions → General*, cochez
+*Require approval for all external contributors*.
+
+Un déploiement se relance à la main depuis l'onglet *Actions* (« Run
+workflow »).
+
 ### Sauvegarde
 
 Toutes les données tiennent dans le fichier SQLite désigné par `DATABASE_URL`.
-Sauvegardez-le à chaud sans arrêter l'application :
+`deploy/backup.sh` en fait une copie à chaud (sans arrêter l'application),
+vérifie son intégrité, la compresse et l'envoie dans un bucket Scaleway Object
+Storage avec [rclone](https://rclone.org). Les copies de plus de 30 jours sont
+supprimées du bucket.
 
-```bash
-sqlite3 /var/lib/louiseetjulien/wedding.db ".backup '/sauvegardes/wedding-$(date +%F).db'"
-```
+| Variable    | Défaut                           | Rôle                                 |
+| ----------- | -------------------------------- | ------------------------------------ |
+| `DB_PATH`   | —                                | Chemin de la base SQLite             |
+| `REMOTE`    | `scw:louiseetjulien-sauvegardes` | Remote rclone et bucket de destination |
+| `KEEP_DAYS` | `30`                             | Durée de conservation dans le bucket |
+
+Le remote rclone `scw` n'est pas déclaré dans un `rclone.conf` : il est décrit
+par les variables `RCLONE_CONFIG_SCW_*` de `/etc/louiseetjulien/backup.env`
+(modèle : `deploy/backup.env.example`), que l'unité systemd charge.
+
+Un timer systemd la déclenche chaque nuit vers 3 h ; si le Pi était éteint à
+cette heure-là, elle part à son redémarrage.
+
+Mise en place, une fois :
+
+1. Dans la console Scaleway, créer un bucket **privé** (par exemple
+   `louiseetjulien-sauvegardes`, région Paris), puis une application IAM
+   dédiée, avec une politique limitée à Object Storage sur ce projet, et une
+   clé d'API pour elle.
+2. Sur le Pi, installer rclone (`sudo apt install rclone`) et renseigner les
+   secrets :
+
+   ```bash
+   sudo install -d -m 755 /etc/louiseetjulien
+   sudo install -m 600 -o louiseetjulien /srv/louiseetjulien/deploy/backup.env.example /etc/louiseetjulien/backup.env
+   sudoedit /etc/louiseetjulien/backup.env   # clés d'API, et REMOTE si le bucket a un autre nom
+   ```
+
+3. Installer les unités, lancer une première sauvegarde et activer le timer :
+
+   ```bash
+   sudo cp /srv/louiseetjulien/deploy/louiseetjulien-backup.{service,timer} /etc/systemd/system/
+   sudo systemctl daemon-reload
+   sudo systemctl start louiseetjulien-backup    # puis vérifier le fichier dans le bucket
+   sudo systemctl enable --now louiseetjulien-backup.timer
+   ```
+
+`systemctl list-timers` affiche la prochaine exécution,
+`journalctl -u louiseetjulien-backup` le résultat des précédentes.
+
+Pour restaurer : télécharger une copie depuis la console Scaleway, arrêter le
+service, la décompresser (`gunzip mariage-AAAA-MM-JJ.db.gz`) à la place de
+`/srv/mariage.db`, redémarrer.
 
 ## Modèle de données
 

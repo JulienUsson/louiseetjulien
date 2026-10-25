@@ -1,0 +1,11 @@
+[Unit]
+Description=Sauvegarde de la base du mariage vers Scaleway Object Storage
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=louiseetjulien
+Environment=DB_PATH=/srv/mariage.db
+EnvironmentFile=/etc/louiseetjulien/backup.env
+ExecStart=/srv/louiseetjulien/deploy/backup.sh
