@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NumberStepper } from "@/components/ui/number-stepper";
 import {
   Select,
   SelectContent,
@@ -173,15 +174,12 @@ export function GuestDialog({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="maxCompanions">Accompagnants autorisés</Label>
-                <Input
+                <NumberStepper
                   id="maxCompanions"
-                  type="number"
                   min={0}
                   max={10}
                   value={values.maxCompanions}
-                  onChange={(event) =>
-                    set("maxCompanions", Number(event.target.value))
-                  }
+                  onValueChange={(value) => set("maxCompanions", value)}
                 />
               </div>
             </div>
