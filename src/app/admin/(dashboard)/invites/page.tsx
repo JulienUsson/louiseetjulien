@@ -3,6 +3,7 @@ import { ExternalLink } from "lucide-react";
 
 import { CopyMessageButton } from "@/components/admin/copy-message-button";
 import { GuestDialog } from "@/components/admin/guest-dialog";
+import { GuestFiltersBar } from "@/components/admin/guest-filters";
 import { GuestImportDialog } from "@/components/admin/guest-import-dialog";
 import { CopyLinkButton } from "@/components/admin/copy-link-button";
 import { RsvpBadge } from "@/components/admin/rsvp-badge";
@@ -19,14 +20,22 @@ import {
 import { guestUrl } from "@/lib/codes";
 import { GUEST_TYPE_LABELS, type GuestType } from "@/lib/constants";
 import { prisma } from "@/lib/db";
+import { guestFiltersWhere, parseGuestFilters } from "@/lib/guest-filters";
 import { invitationMessage } from "@/lib/invitation-message";
 import { formatDate, getSettings } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 
-export default async function GuestsPage() {
-  const [guests, settings] = await Promise.all([
+export default async function GuestsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const filters = parseGuestFilters(await searchParams);
+
+  const [guests, total, settings] = await Promise.all([
     prisma.guest.findMany({
+      where: guestFiltersWhere(filters),
       orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
       include: {
         _count: { select: { companions: true } },
@@ -37,6 +46,7 @@ export default async function GuestsPage() {
         },
       },
     }),
+    prisma.guest.count(),
     getSettings(),
   ]);
 
@@ -48,8 +58,10 @@ export default async function GuestsPage() {
         <div>
           <h1 className="font-serif text-3xl">Invités</h1>
           <p className="text-muted-foreground mt-1">
-            {guests.length} invitation(s). Chaque invité renseigne lui-même son
-            email depuis son lien.
+            {guests.length === total
+              ? `${total} invitation(s).`
+              : `${guests.length} invitation(s) sur ${total}.`}{" "}
+            Chaque invité renseigne lui-même son email depuis son lien.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -58,12 +70,23 @@ export default async function GuestsPage() {
         </div>
       </div>
 
-      {guests.length === 0 ? (
+      {total > 0 && <GuestFiltersBar filters={filters} />}
+
+      {total === 0 ? (
         <div className="rounded-lg border border-dashed p-12 text-center">
           <p className="text-muted-foreground">
             Aucun invité pour l&apos;instant. Ajoutez-en un, ou importez votre
             liste d&apos;un coup.
           </p>
+        </div>
+      ) : guests.length === 0 ? (
+        <div className="rounded-lg border border-dashed p-12 text-center">
+          <p className="text-muted-foreground">
+            Aucun invité ne correspond à ces filtres.
+          </p>
+          <Button asChild variant="link" className="mt-2">
+            <Link href="/admin/invites">Voir tous les invités</Link>
+          </Button>
         </div>
       ) : (
         <div className="rounded-lg border bg-background overflow-x-auto">

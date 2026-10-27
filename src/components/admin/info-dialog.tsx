@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NumberStepper } from "@/components/ui/number-stepper";
 import {
   Select,
   SelectContent,
@@ -152,14 +153,12 @@ export function InfoDialog({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="position">Ordre d&apos;affichage</Label>
-                <Input
+                <NumberStepper
                   id="position"
-                  type="number"
                   min={0}
+                  max={999}
                   value={values.position}
-                  onChange={(event) =>
-                    set("position", Number(event.target.value))
-                  }
+                  onValueChange={(value) => set("position", value)}
                 />
               </div>
             </div>
