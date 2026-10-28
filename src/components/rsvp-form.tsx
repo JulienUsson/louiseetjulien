@@ -45,12 +45,12 @@ const LODGING_CHOICES: { value: Lodging; label: string; hint: string }[] = [
   {
     value: "CHATEAU",
     label: "Oui, un logement au château",
-    hint: "Aux alentours de 50 € par personne.",
+    hint: "En gîte ou en mobil-home, aux alentours de 50\u00a0€ par personne. Les enfants peuvent dormir gratuitement sur un matelas au sol dans la chambre de leurs parents.",
   },
   {
     value: "HALL",
-    label: "Je dormirai dans la salle",
-    hint: "Pense à apporter ton matelas.",
+    label: "Je dormirai sur la mezzanine",
+    hint: "Matelas au sol sur la mezzanine de la salle, pas là où l'on mange. Pense à apporter ton matelas.",
   },
   {
     value: "TENT",

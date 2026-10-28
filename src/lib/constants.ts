@@ -25,8 +25,8 @@ export const LODGINGS = ["CHATEAU", "HALL", "TENT", "NONE"] as const;
 export type Lodging = (typeof LODGINGS)[number];
 
 export const LODGING_LABELS: Record<Lodging, string> = {
-  CHATEAU: "Logement au château",
-  HALL: "Dans la salle (matelas)",
+  CHATEAU: "Gîte ou mobil-home",
+  HALL: "Mezzanine (matelas)",
   TENT: "En tente",
   NONE: "Pas besoin",
 };

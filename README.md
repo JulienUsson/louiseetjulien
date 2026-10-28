@@ -68,9 +68,11 @@ souhaite y assister — la question n'apparaît que si un lieu de mairie est
 renseigné, et seulement pour ceux qui viennent. Le tableau de bord en donne
 l'effectif, accompagnants compris.
 
-Les invités à la journée complète indiquent aussi où ils dormiront : logement
-au château (aux alentours de 50 € par personne), dans la salle (avec leur
-matelas), sous leur tente, ou ailleurs. Le tableau de bord en donne la
+Les invités à la journée complète indiquent aussi où ils dormiront : au
+château, en gîte ou en mobil-home (aux alentours de 50 € par personne, les
+enfants pouvant dormir gratuitement sur un matelas dans la chambre de leurs
+parents), sur la mezzanine de la salle (avec leur matelas, pas là où l'on
+mange), sous leur tente, ou ailleurs. Le tableau de bord en donne la
 répartition, accompagnants compris.
 
 Chaque lieu accepte des coordonnées `latitude,longitude` qui déclenchent
