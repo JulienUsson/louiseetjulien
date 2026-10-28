@@ -38,7 +38,10 @@ export default async function GuestsPage({
       where: guestFiltersWhere(filters),
       orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
       include: {
-        _count: { select: { companions: true } },
+        companions: {
+          orderBy: { createdAt: "asc" },
+          select: { id: true, firstName: true, lastName: true, isChild: true },
+        },
         emails: {
           where: { kind: "INVITATION", status: "SENT" },
           select: { id: true },
@@ -110,10 +113,15 @@ export default async function GuestsPage({
                     >
                       {guest.firstName} {guest.lastName}
                     </Link>
-                    {guest._count.companions > 0 && (
-                      <span className="ml-2 text-xs text-muted-foreground">
-                        +{guest._count.companions}
-                      </span>
+                    {guest.companions.length > 0 && (
+                      <ul className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                        {guest.companions.map((companion) => (
+                          <li key={companion.id}>
+                            + {companion.firstName} {companion.lastName}
+                            {companion.isChild && " (enfant)"}
+                          </li>
+                        ))}
+                      </ul>
                     )}
                   </TableCell>
                   <TableCell>
