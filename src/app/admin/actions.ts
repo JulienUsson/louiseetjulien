@@ -31,6 +31,8 @@ export type ActionResult = {
   message?: string;
   /** Renseigné par `geocodeSetting` uniquement. */
   coords?: string;
+  /** Renseigné par `createGuest`, pour ouvrir la fiche créée. */
+  guestId?: string;
 };
 
 function fail(error: string): ActionResult {
@@ -109,7 +111,7 @@ export async function createGuest(
   revalidatePath("/admin/invites");
   revalidatePath("/admin");
 
-  if (!sendInvitation || !guest.email) return { ok: true };
+  if (!sendInvitation || !guest.email) return { ok: true, guestId: guest.id };
 
   // L'invité est créé quoi qu'il arrive : un échec d'envoi se signale, mais
   // ne doit pas donner l'impression que la création a échoué.
@@ -117,9 +119,14 @@ export async function createGuest(
   revalidatePath("/admin/emails");
 
   return result.ok
-    ? { ok: true, message: `Invité créé, invitation envoyée à ${guest.email}.` }
+    ? {
+        ok: true,
+        guestId: guest.id,
+        message: `Invité créé, invitation envoyée à ${guest.email}.`,
+      }
     : {
         ok: true,
+        guestId: guest.id,
         message: `Invité créé, mais l'invitation n'est pas partie : ${result.error}`,
       };
 }

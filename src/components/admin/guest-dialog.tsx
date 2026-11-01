@@ -133,8 +133,12 @@ export function GuestDialog({
         result.message ?? (guest ? "Invité mis à jour." : "Invité créé."),
       );
       setOpen(false);
-      if (!guest) setValues(EMPTY);
-      router.refresh();
+      if (result.guestId) {
+        setValues(EMPTY);
+        router.push(`/admin/invites/${result.guestId}`);
+      } else {
+        router.refresh();
+      }
     });
   };
 
