@@ -28,6 +28,8 @@ export type RsvpFormProps = {
   mairieLabel: string;
   /** Seuls les invités à la journée complète restent dormir sur place. */
   askLodging: boolean;
+  /** Vouvoiement collectif quand les accompagnants sont déjà connus. */
+  plural: boolean;
   defaultValues: {
     email: string;
     phone: string;
@@ -41,7 +43,11 @@ export type RsvpFormProps = {
   };
 };
 
-const LODGING_CHOICES: { value: Lodging; label: string; hint: string }[] = [
+type Wording = (singular: string, plural: string) => string;
+
+const lodgingChoices = (
+  p: Wording,
+): { value: Lodging; label: string; hint: string }[] => [
   {
     value: "CHATEAU",
     label: "Oui, un logement au château",
@@ -49,18 +55,21 @@ const LODGING_CHOICES: { value: Lodging; label: string; hint: string }[] = [
   },
   {
     value: "HALL",
-    label: "Je dormirai sur la mezzanine",
-    hint: "Matelas au sol sur la mezzanine de la salle, pas là où l'on mange. Pense à apporter ton matelas.",
+    label: p("Je dormirai sur la mezzanine", "Nous dormirons sur la mezzanine"),
+    hint: p(
+      "Matelas au sol sur la mezzanine de la salle, pas là où l'on mange. Pense à apporter ton matelas.",
+      "Matelas au sol sur la mezzanine de la salle, pas là où l'on mange. Pensez à apporter vos matelas.",
+    ),
   },
   {
     value: "TENT",
-    label: "Je viendrai avec ma tente",
-    hint: "Pense à apporter ta tente.",
+    label: p("Je viendrai avec ma tente", "Nous viendrons avec notre tente"),
+    hint: p("Pense à apporter ta tente.", "Pensez à apporter votre tente."),
   },
   {
     value: "NONE",
     label: "Non merci",
-    hint: "Je rentre ou je dors ailleurs.",
+    hint: p("Je rentre ou je dors ailleurs.", "Nous rentrons ou dormons ailleurs."),
   },
 ];
 
@@ -77,8 +86,11 @@ export function RsvpForm({
   askMairie,
   mairieLabel,
   askLodging,
+  plural,
   defaultValues,
 }: RsvpFormProps) {
+  const p: Wording = (singular, many) => (plural ? many : singular);
+
   const [attending, setAttending] = useState<boolean | null>(
     defaultValues.attending,
   );
@@ -110,7 +122,9 @@ export function RsvpForm({
     event.preventDefault();
 
     if (attending === null) {
-      toast.error("Dis-nous si tu seras des nôtres.");
+      toast.error(
+        p("Dis-nous si tu seras des nôtres.", "Dites-nous si vous serez des nôtres."),
+      );
       return;
     }
 
@@ -131,8 +145,11 @@ export function RsvpForm({
       if (result.ok) {
         toast.success(
           attending
-            ? "Merci ! Ta réponse est enregistrée."
-            : "Merci pour ta réponse, tu vas nous manquer.",
+            ? p("Merci ! Ta réponse est enregistrée.", "Merci ! Votre réponse est enregistrée.")
+            : p(
+                "Merci pour ta réponse, tu vas nous manquer.",
+                "Merci pour votre réponse, vous allez nous manquer.",
+              ),
         );
       } else {
         toast.error(result.error ?? "Une erreur est survenue.");
@@ -144,7 +161,7 @@ export function RsvpForm({
     <form onSubmit={handleSubmit} className="space-y-6">
       <fieldset className="space-y-3">
         <legend className="text-sm font-medium mb-3">
-          Tu seras des nôtres ?
+          {p("Tu seras des nôtres ?", "Vous serez des nôtres ?")}
         </legend>
         <div className="grid grid-cols-2 gap-3">
           <ChoiceButton
@@ -158,7 +175,7 @@ export function RsvpForm({
             selected={attending === false}
             onClick={() => setAttending(false)}
             icon={<X className="size-4" />}
-            label="Je ne pourrai pas"
+            label={p("Je ne pourrai pas", "Nous ne pourrons pas")}
             tone="no"
           />
         </div>
@@ -166,7 +183,7 @@ export function RsvpForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="email">Ton email *</Label>
+          <Label htmlFor="email">{p("Ton email *", "Votre email *")}</Label>
           <Input
             id="email"
             type="email"
@@ -177,7 +194,8 @@ export function RsvpForm({
             autoComplete="email"
           />
           <p className="text-xs text-muted-foreground">
-            Pour t&apos;envoyer les infos pratiques. Rien d&apos;autre, promis.
+            {p("Pour t'envoyer", "Pour vous envoyer")} les infos pratiques.
+            Rien d&apos;autre, promis.
           </p>
         </div>
         <div className="space-y-2">
@@ -208,12 +226,16 @@ export function RsvpForm({
                 />
                 <div>
                   <Label htmlFor="attendingMairie" className="font-normal">
-                    Je souhaite assister au passage {mairieLabel}
+                    {p("Je souhaite", "Nous souhaitons")} assister au passage{" "}
+                    {mairieLabel}
                   </Label>
                   <p className="mt-1 text-xs text-muted-foreground">
                     C&apos;est un moment plus court et plus intime, en amont de
-                    la cérémonie laïque. Aucune obligation : coche seulement si
-                    tu veux en être.
+                    la cérémonie laïque. Aucune obligation :{" "}
+                    {p(
+                      "coche seulement si tu veux en être.",
+                      "cochez seulement si vous voulez en être.",
+                    )}
                   </p>
                 </div>
               </div>
@@ -236,9 +258,10 @@ export function RsvpForm({
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <Label>Tes accompagnants</Label>
+                  <Label>{p("Tes accompagnants", "Vos accompagnants")}</Label>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Tu peux en déclarer jusqu&apos;à {maxCompanions}.
+                    {p("Tu peux", "Vous pouvez")} en déclarer jusqu&apos;à{" "}
+                    {maxCompanions}.
                   </p>
                 </div>
                 {companions.length < maxCompanions && (
@@ -327,14 +350,17 @@ export function RsvpForm({
           {askLodging && (
             <fieldset className="space-y-3">
               <legend className="text-sm font-medium">
-                Souhaites-tu un logement pour la nuit ?
+                {p(
+                  "Souhaites-tu un logement pour la nuit ?",
+                  "Souhaitez-vous un logement pour la nuit ?",
+                )}
               </legend>
               <p className="text-xs text-muted-foreground">
                 Le nombre de places au château est limité et les logements
                 seront partagés.
               </p>
               <div className="grid gap-3 sm:grid-cols-2">
-                {LODGING_CHOICES.map((choice) => (
+                {lodgingChoices(p).map((choice) => (
                   <button
                     key={choice.value}
                     type="button"
@@ -363,7 +389,10 @@ export function RsvpForm({
           <div className="space-y-2">
             <Label htmlFor="songRequest" className="flex items-center gap-1.5">
               <Music className="size-4 text-orange-500" />
-              Une musique que tu aimerais entendre ?
+              {p(
+                "Une musique que tu aimerais entendre ?",
+                "Une musique que vous aimeriez entendre ?",
+              )}
             </Label>
             <Input
               id="songRequest"
@@ -389,8 +418,8 @@ export function RsvpForm({
       <Button type="submit" size="lg" className="w-full" disabled={pending}>
         {pending && <Loader2 className="size-4 animate-spin" />}
         {defaultValues.attending === null
-          ? "Envoyer ma réponse"
-          : "Mettre à jour ma réponse"}
+          ? p("Envoyer ma réponse", "Envoyer notre réponse")
+          : p("Mettre à jour ma réponse", "Mettre à jour notre réponse")}
       </Button>
     </form>
   );

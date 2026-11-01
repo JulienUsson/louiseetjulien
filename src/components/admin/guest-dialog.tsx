@@ -34,6 +34,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { GUEST_TYPES, GUEST_TYPE_LABELS, type GuestType } from "@/lib/constants";
 
+type CompanionSlot = { id?: string; firstName: string; lastName: string };
+
 type GuestFormValues = {
   firstName: string;
   lastName: string;
@@ -42,6 +44,7 @@ type GuestFormValues = {
   type: GuestType;
   maxCompanions: number;
   notes: string;
+  companions: CompanionSlot[];
 };
 
 const EMPTY: GuestFormValues = {
@@ -52,7 +55,30 @@ const EMPTY: GuestFormValues = {
   type: "FULL",
   maxCompanions: 0,
   notes: "",
+  companions: [],
 };
+
+/** Une case par accompagnant autorisé, remplie quand on connaît son nom. */
+function withSlots(values: GuestFormValues, count = values.maxCompanions) {
+  const maxCompanions = Math.max(count, 0);
+  return {
+    ...values,
+    maxCompanions,
+    companions: Array.from(
+      { length: maxCompanions },
+      (_, index) =>
+        values.companions[index] ?? { firstName: "", lastName: "" },
+    ),
+  };
+}
+
+function initialValues(guest?: GuestFormValues) {
+  if (!guest) return EMPTY;
+  return withSlots(
+    guest,
+    Math.max(guest.maxCompanions, guest.companions.length),
+  );
+}
 
 /**
  * Sert à la création (sans `guest`) comme à la modification (avec `guest`).
@@ -66,7 +92,9 @@ export function GuestDialog({
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [values, setValues] = useState<GuestFormValues>(guest ?? EMPTY);
+  const [values, setValues] = useState<GuestFormValues>(() =>
+    initialValues(guest),
+  );
   const [sendInvitation, setSendInvitation] = useState(true);
   const [pending, startTransition] = useTransition();
 
@@ -78,6 +106,14 @@ export function GuestDialog({
     key: K,
     value: GuestFormValues[K],
   ) => setValues((current) => ({ ...current, [key]: value }));
+
+  const setCompanion = (index: number, patch: Partial<CompanionSlot>) =>
+    setValues((current) => ({
+      ...current,
+      companions: current.companions.map((companion, i) =>
+        i === index ? { ...companion, ...patch } : companion,
+      ),
+    }));
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -107,7 +143,7 @@ export function GuestDialog({
       open={open}
       onOpenChange={(next) => {
         setOpen(next);
-        if (next) setValues(guest ?? EMPTY);
+        if (next) setValues(initialValues(guest));
       }}
     >
       <DialogTrigger asChild>
@@ -179,10 +215,47 @@ export function GuestDialog({
                   min={0}
                   max={10}
                   value={values.maxCompanions}
-                  onValueChange={(value) => set("maxCompanions", value)}
+                  onValueChange={(value) =>
+                    setValues((current) => withSlots(current, value))
+                  }
                 />
               </div>
             </div>
+
+            {values.companions.length > 0 && (
+              <div className="space-y-3 rounded-lg border bg-muted/40 p-4">
+                <div>
+                  <p className="text-sm font-medium">
+                    Accompagnants connus (facultatif)
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Ils seront pré-remplis sur la page de l&apos;invité, qui
+                    sera alors rédigée au pluriel. Laissez vide si vous ne
+                    savez pas encore.
+                  </p>
+                </div>
+                {values.companions.map((companion, index) => (
+                  <div key={index} className="grid grid-cols-2 gap-2">
+                    <Input
+                      aria-label={`Prénom de l'accompagnant ${index + 1}`}
+                      placeholder={`Prénom ${index + 1}`}
+                      value={companion.firstName}
+                      onChange={(event) =>
+                        setCompanion(index, { firstName: event.target.value })
+                      }
+                    />
+                    <Input
+                      aria-label={`Nom de l'accompagnant ${index + 1}`}
+                      placeholder="Nom"
+                      value={companion.lastName}
+                      onChange={(event) =>
+                        setCompanion(index, { lastName: event.target.value })
+                      }
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">

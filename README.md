@@ -86,11 +86,18 @@ coordonnées, seule l'adresse en texte est affichée.
 Les invités sont tutoyés, partout : pages, formulaire de réponse, emails. Le
 back-office, lui, s'adresse aux mariés.
 
+Quand les accompagnants d'un invité sont connus, tout passe au pluriel : la
+page salue « Antoine et Claire », le formulaire les vouvoie (« Vous serez des
+nôtres ? ») et le message d'invitation suit.
+
 ## Créer les invités
 
 Deux façons, toutes deux dans `/admin/invites` :
 
-1. **Un par un** — bouton « Ajouter un invité ». L'email est facultatif.
+1. **Un par un** — bouton « Ajouter un invité ». L'email est facultatif. Pour
+   chaque accompagnant autorisé, on peut indiquer son prénom si on le connaît :
+   il est pré-rempli sur la page de l'invité, qui peut le corriger. Un refus ne
+   les efface pas, pour qu'ils restent connus si l'invité change d'avis.
 2. **En masse** — bouton « Importer une liste », une ligne par invité :
    `Prénom;Nom;FULL ou COCKTAIL;accompagnants;email`. Seuls le prénom et le nom
    sont obligatoires ; les séparateurs `;`, `,` et tabulation sont acceptés, ce
@@ -119,6 +126,13 @@ début, et l'envoi par email ne peut atteindre qu'une poignée de gens.
 
 Depuis la fiche d'un invité, « Envoyer par email » (re)transmet le lien dès
 qu'une adresse est connue — utile pour ceux créés sans email.
+
+Le texte du message et celui de l'email d'invitation (objet, titre, corps) se
+modifient dans `/admin/reglages`, avec un aperçu. Variables : `{prenoms}`
+(l'invité et ses accompagnants connus), `{couple}`, `{date}` et `{lien}` ;
+`{singulier|pluriel}` choisit le texte selon que l'invitation concerne une
+personne ou plusieurs, par exemple `{t'avoir|vous avoir}`. Dans l'email, le
+lien seul sur sa ligne devient un bouton.
 
 Chaque invitation reçoit un code de 10 caractères tiré au sort dans un alphabet
 sans caractères ambigus (pas de `0`/`O`, ni de `1`/`I`/`L`), pour rester
@@ -313,11 +327,12 @@ service, la décompresser (`gunzip mariage-AAAA-MM-JJ.db.gz`) à la place de
 - `Guest` — un invité = une invitation = un lien. Porte le code, le type,
   l'email (renseigné par l'invité), la réponse, la présence à la mairie, le
   logement, la musique souhaitée et le nombre d'accompagnants autorisés.
-- `Companion` — les accompagnants déclarés par l'invité.
+- `Companion` — les accompagnants, renseignés par les mariés quand ils les
+  connaissent ou déclarés par l'invité.
 - `InfoPost` — une information, son audience et son état de publication.
 - `EmailLog` — la trace de chaque envoi, réussi ou non.
-- `Setting` — les réglages de l'évènement (dates, lieux, contacts), éditables
-  depuis `/admin/reglages`.
+- `Setting` — les réglages de l'évènement (dates, lieux, contacts, textes
+  d'invitation), éditables depuis `/admin/reglages`.
 
 SQLite ne gérant pas les enums Prisma, les champs « énumérés » sont des `String`
 validés côté application (`src/lib/constants.ts`).
