@@ -59,6 +59,18 @@ const guestSchema = z.object({
   type: z.enum(GUEST_TYPES),
   maxCompanions: z.coerce.number().int().min(0).max(10),
   notes: z.string().trim().max(2000).optional().default(""),
+  /** Accompagnants déjà connus, pré-remplis sur la page de l'invité. */
+  companions: z
+    .array(
+      z.object({
+        id: z.string().optional(),
+        firstName: z.string().trim().max(80),
+        lastName: z.string().trim().max(80).optional().default(""),
+      }),
+    )
+    .max(10)
+    .optional()
+    .default([]),
 });
 
 export type GuestInput = z.input<typeof guestSchema>;
@@ -73,6 +85,7 @@ export async function createGuest(
   if (!parsed.success) return fail(parsed.error.issues[0].message);
 
   const data = parsed.data;
+  const companions = knownCompanions(data);
   const guest = await prisma.guest.create({
     data: {
       firstName: data.firstName,
@@ -80,10 +93,17 @@ export async function createGuest(
       email: data.email || null,
       phone: data.phone || null,
       type: data.type,
-      maxCompanions: data.maxCompanions,
+      maxCompanions: Math.max(data.maxCompanions, companions.length),
       notes: data.notes || null,
       code: await uniqueCode(),
+      companions: {
+        create: companions.map(({ firstName, lastName }) => ({
+          firstName,
+          lastName: lastName || null,
+        })),
+      },
     },
+    include: { companions: true },
   });
 
   revalidatePath("/admin/invites");
@@ -114,22 +134,48 @@ export async function updateGuest(
   if (!parsed.success) return fail(parsed.error.issues[0].message);
 
   const data = parsed.data;
-  await prisma.guest.update({
-    where: { id },
-    data: {
-      firstName: data.firstName,
-      lastName: data.lastName,
-      email: data.email || null,
-      phone: data.phone || null,
-      type: data.type,
-      maxCompanions: data.maxCompanions,
-      notes: data.notes || null,
-    },
-  });
+  const companions = knownCompanions(data);
+  const kept = companions.flatMap((companion) =>
+    companion.id ? [companion.id] : [],
+  );
+
+  // Les accompagnants existants sont mis à jour plutôt que recréés, pour ne
+  // pas perdre ce que l'invité a pu préciser (enfant, régime alimentaire).
+  await prisma.$transaction([
+    prisma.guest.update({
+      where: { id },
+      data: {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email || null,
+        phone: data.phone || null,
+        type: data.type,
+        maxCompanions: Math.max(data.maxCompanions, companions.length),
+        notes: data.notes || null,
+      },
+    }),
+    prisma.companion.deleteMany({
+      where: { guestId: id, id: { notIn: kept } },
+    }),
+    ...companions.map(({ id: companionId, firstName, lastName }) =>
+      companionId
+        ? prisma.companion.updateMany({
+            where: { id: companionId, guestId: id },
+            data: { firstName, lastName: lastName || null },
+          })
+        : prisma.companion.create({
+            data: { guestId: id, firstName, lastName: lastName || null },
+          }),
+    ),
+  ]);
 
   revalidatePath("/admin/invites");
   revalidatePath(`/admin/invites/${id}`);
   return { ok: true };
+}
+
+function knownCompanions(data: z.output<typeof guestSchema>) {
+  return data.companions.filter((companion) => companion.firstName.length > 0);
 }
 
 export async function deleteGuest(id: string): Promise<ActionResult> {
@@ -201,6 +247,7 @@ export async function importGuests(
         maxCompanions: data.maxCompanions,
         code: await uniqueCode(),
       },
+      include: { companions: true },
     });
     created++;
     if (guest.email) invitable.push(guest);
@@ -250,6 +297,7 @@ type InvitableGuest = {
   firstName: string;
   code: string;
   email: string | null;
+  companions: { firstName: string }[];
 };
 
 /** Envoi du lien d'invitation à un invité déjà chargé. */
@@ -262,8 +310,11 @@ async function sendInvitationTo(
 
   const settings = await getSettings();
   const email = invitationEmail({
-    coupleNames: settings.coupleNames,
-    firstName: guest.firstName,
+    settings,
+    names: [
+      guest.firstName,
+      ...guest.companions.map((companion) => companion.firstName),
+    ],
     url: guestUrl(guest.code),
     weddingDateLabel: formatDate(settings.weddingDate),
   });
@@ -279,7 +330,10 @@ async function sendInvitationTo(
 export async function sendInvitation(guestId: string): Promise<ActionResult> {
   await requireAdmin();
 
-  const guest = await prisma.guest.findUnique({ where: { id: guestId } });
+  const guest = await prisma.guest.findUnique({
+    where: { id: guestId },
+    include: { companions: { orderBy: { createdAt: "asc" } } },
+  });
   if (!guest) return fail("Invité introuvable.");
 
   const result = await sendInvitationTo(guest);

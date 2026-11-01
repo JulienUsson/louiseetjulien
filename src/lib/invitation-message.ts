@@ -1,3 +1,6 @@
+import { SETTING_DEFAULTS } from "@/lib/settings-fields";
+import { joinNames, renderTemplate } from "@/lib/templates";
+
 /**
  * Message d'invitation en texte brut, à coller dans un SMS ou une messagerie.
  *
@@ -6,24 +9,22 @@
  * renseignent depuis leur lien.
  */
 export function invitationMessage(params: {
+  template: string;
   coupleNames: string;
-  firstName: string;
+  names: string[];
   url: string;
   weddingDateLabel?: string;
 }): string {
-  const { coupleNames, firstName, url, weddingDateLabel } = params;
-  const dateLine = weddingDateLabel ? ` le ${weddingDateLabel}` : "";
+  const { template, coupleNames, names, url, weddingDateLabel } = params;
 
-  return [
-    `Bonjour ${firstName} !`,
-    "",
-    `Nous nous marions${dateLine} et on serait vraiment heureux de t'avoir avec nous.`,
-    "",
-    "Voici ton lien personnel : tu y retrouveras toutes les infos pratiques et tu pourras nous confirmer ta présence.",
-    url,
-    "",
-    "Ce lien n'est qu'à toi, merci de ne pas le transmettre.",
-    "",
-    coupleNames,
-  ].join("\n");
+  return renderTemplate(
+    template || SETTING_DEFAULTS.invitationMessage,
+    {
+      prenoms: joinNames(names),
+      couple: coupleNames,
+      date: weddingDateLabel ?? "",
+      lien: url,
+    },
+    names.length > 1,
+  );
 }

@@ -58,8 +58,12 @@ export async function submitRsvp(input: RsvpInput): Promise<RsvpState> {
         .slice(0, guest.maxCompanions)
     : [];
 
+  // Un refus laisse les accompagnants en place : ceux que nous avions
+  // renseignés restent connus si l'invité change d'avis.
   await prisma.$transaction([
-    prisma.companion.deleteMany({ where: { guestId: guest.id } }),
+    ...(data.attending
+      ? [prisma.companion.deleteMany({ where: { guestId: guest.id } })]
+      : []),
     prisma.guest.update({
       where: { id: guest.id },
       data: {

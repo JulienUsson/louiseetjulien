@@ -1,5 +1,8 @@
 import "server-only";
 
+import { SETTING_DEFAULTS, type Settings } from "@/lib/settings-fields";
+import { joinNames, renderTemplate } from "@/lib/templates";
+
 const ROSE = "#e11d48";
 const ORANGE = "#f97316";
 const INK = "#3f3034";
@@ -97,50 +100,73 @@ function button(href: string, label: string): string {
 export type RenderedEmail = { subject: string; text: string; html: string };
 
 export function invitationEmail(params: {
-  coupleNames: string;
-  firstName: string;
+  settings: Pick<
+    Settings,
+    | "coupleNames"
+    | "invitationEmailSubject"
+    | "invitationEmailTitle"
+    | "invitationEmailBody"
+  >;
+  names: string[];
   url: string;
   weddingDateLabel: string;
 }): RenderedEmail {
-  const { coupleNames, firstName, url, weddingDateLabel } = params;
-  const dateLine = weddingDateLabel ? ` le ${weddingDateLabel}` : "";
+  const { settings, names, url, weddingDateLabel } = params;
+  const plural = names.length > 1;
+  const render = (template: string, fallback: string) =>
+    renderTemplate(
+      template || fallback,
+      {
+        prenoms: joinNames(names),
+        couple: settings.coupleNames,
+        date: weddingDateLabel,
+        lien: url,
+      },
+      plural,
+    ).trim();
+
+  const subject = render(
+    settings.invitationEmailSubject,
+    SETTING_DEFAULTS.invitationEmailSubject,
+  );
+  const title = render(
+    settings.invitationEmailTitle,
+    SETTING_DEFAULTS.invitationEmailTitle,
+  );
+  const body = render(
+    settings.invitationEmailBody,
+    SETTING_DEFAULTS.invitationEmailBody,
+  );
+
+  const blocks = body.split(/\n{2,}/);
+  const hasLinkBlock = blocks.some((block) => block.trim() === url);
 
   const text = [
-    `Bonjour ${firstName},`,
+    body,
+    ...(body.includes(url) ? [] : ["", url]),
     "",
-    `Nous nous marions${dateLine} et nous serions très heureux de t'avoir avec nous.`,
-    "",
-    "Voici ton lien personnel. Tu y retrouveras toutes les informations pratiques et tu pourras nous confirmer ta présence :",
-    url,
-    "",
-    "Ce lien n'est qu'à toi : merci de ne pas le transmettre.",
-    "",
-    `À très vite,`,
-    coupleNames,
+    settings.coupleNames,
   ].join("\n");
 
-  const html = layout({
-    coupleNames,
-    title: "Tu es invité·e !",
-    content: `
-      <p style="margin:0 0 16px;line-height:1.6;color:${INK};font-size:15px;">Bonjour ${escapeHtml(firstName)},</p>
-      <p style="margin:0 0 16px;line-height:1.6;color:${INK};font-size:15px;">
-        Nous nous marions${escapeHtml(dateLine)} et nous serions très heureux de t'avoir avec nous.
-      </p>
-      <p style="margin:0 0 20px;line-height:1.6;color:${INK};font-size:15px;">
-        Voici ton lien personnel : tu y retrouveras toutes les informations pratiques et tu pourras nous confirmer ta présence.
-      </p>
-      ${button(url, "Voir mon invitation")}
-      <p style="margin:0;line-height:1.6;color:#a08d86;font-size:12px;text-align:center;">
-        Si le bouton ne fonctionne pas, copie ce lien :<br />
+  const linkBlock = `
+      ${button(url, plural ? "Voir notre invitation" : "Voir mon invitation")}
+      <p style="margin:0 0 16px;line-height:1.6;color:#a08d86;font-size:12px;text-align:center;">
+        Si le bouton ne fonctionne pas, ${plural ? "copiez" : "copie"} ce lien :<br />
         <a href="${escapeHtml(url)}" style="color:${ROSE};word-break:break-all;">${escapeHtml(url)}</a>
-      </p>
-      <p style="margin:16px 0 0;line-height:1.6;color:#a08d86;font-size:12px;text-align:center;">
-        Ce lien n'est qu'à toi, merci de ne pas le transmettre.
-      </p>`,
+      </p>`;
+
+  const html = layout({
+    coupleNames: settings.coupleNames,
+    title,
+    content: [
+      ...blocks.map((block) =>
+        block.trim() === url ? linkBlock : toParagraphs(block),
+      ),
+      ...(hasLinkBlock ? [] : [linkBlock]),
+    ].join(""),
   });
 
-  return { subject: `${coupleNames} — tu es invité·e !`, text, html };
+  return { subject, text, html };
 }
 
 export function infoEmail(params: {

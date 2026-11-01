@@ -97,6 +97,11 @@ export default async function GuestDetailPage({
             type: (guest.type === "COCKTAIL" ? "COCKTAIL" : "FULL") as GuestType,
             maxCompanions: guest.maxCompanions,
             notes: guest.notes ?? "",
+            companions: guest.companions.map((companion) => ({
+              id: companion.id,
+              firstName: companion.firstName,
+              lastName: companion.lastName ?? "",
+            })),
           }}
           trigger={
             <Button variant="outline">
@@ -125,8 +130,12 @@ export default async function GuestDetailPage({
               <CopyMessageButton
                 variant="outline"
                 message={invitationMessage({
+                  template: settings.invitationMessage,
                   coupleNames: settings.coupleNames,
-                  firstName: guest.firstName,
+                  names: [
+                    guest.firstName,
+                    ...guest.companions.map((companion) => companion.firstName),
+                  ],
                   url,
                   weddingDateLabel: formatDate(settings.weddingDate),
                 })}

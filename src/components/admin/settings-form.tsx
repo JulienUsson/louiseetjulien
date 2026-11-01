@@ -15,15 +15,20 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
+  SETTING_DEFAULTS,
   SETTING_GROUPS,
   VENUES,
+  formatDate,
   frenchDateToIso,
   isoToFrenchDate,
   parseCoords,
   type SettingKey,
   type Settings,
 } from "@/lib/settings-fields";
+import { joinNames, renderTemplate } from "@/lib/templates";
+import { cn } from "@/lib/utils";
 
 const DATE_KEYS = SETTING_GROUPS.flatMap((group) => group.fields)
   .filter((field) => field.type === "date")
@@ -103,7 +108,13 @@ export function SettingsForm({ settings }: { settings: Settings }) {
             <CardContent className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 {group.fields.map((field) => (
-                  <div key={field.key} className="space-y-2">
+                  <div
+                    key={field.key}
+                    className={cn(
+                      "space-y-2",
+                      field.type === "textarea" && "sm:col-span-2",
+                    )}
+                  >
                     <Label htmlFor={field.key}>{field.label}</Label>
                     {field.type === "date" ? (
                       <Input
@@ -117,6 +128,15 @@ export function SettingsForm({ settings }: { settings: Settings }) {
                         }
                         aria-invalid={invalidDate(field.key)}
                       />
+                    ) : field.type === "textarea" ? (
+                      <Textarea
+                        id={field.key}
+                        name={field.key}
+                        rows={10}
+                        value={values[field.key]}
+                        onChange={(event) => set(field.key, event.target.value)}
+                        placeholder={SETTING_DEFAULTS[field.key]}
+                      />
                     ) : (
                       <Input
                         id={field.key}
@@ -124,6 +144,7 @@ export function SettingsForm({ settings }: { settings: Settings }) {
                         type={field.type ?? "text"}
                         value={values[field.key]}
                         onChange={(event) => set(field.key, event.target.value)}
+                        placeholder={field.template ? SETTING_DEFAULTS[field.key] : undefined}
                       />
                     )}
                     {field.type === "date" && invalidDate(field.key) ? (
@@ -136,6 +157,12 @@ export function SettingsForm({ settings }: { settings: Settings }) {
                           {field.help}
                         </p>
                       )
+                    )}
+                    {field.template && (
+                      <TemplatePreview
+                        template={values[field.key] || SETTING_DEFAULTS[field.key]}
+                        settings={values}
+                      />
                     )}
                   </div>
                 ))}
@@ -192,5 +219,42 @@ export function SettingsForm({ settings }: { settings: Settings }) {
         Enregistrer
       </Button>
     </form>
+  );
+}
+
+const PREVIEW_NAMES = [["Camille"], ["Camille", "Alex"]];
+
+function TemplatePreview({
+  template,
+  settings,
+}: {
+  template: string;
+  settings: Settings;
+}) {
+  return (
+    <details className="text-xs">
+      <summary className="cursor-pointer text-muted-foreground">Aperçu</summary>
+      <div className="mt-2 grid gap-2 sm:grid-cols-2">
+        {PREVIEW_NAMES.map((names) => (
+          <div key={names.length} className="rounded-md border bg-muted/40 p-3">
+            <div className="mb-1 font-medium">
+              {names.length > 1 ? "Avec accompagnants" : "Une personne"}
+            </div>
+            <p className="whitespace-pre-line text-muted-foreground">
+              {renderTemplate(
+                template,
+                {
+                  prenoms: joinNames(names),
+                  couple: settings.coupleNames,
+                  date: formatDate(settings.weddingDate),
+                  lien: "https://…/i/ABCD1234",
+                },
+                names.length > 1,
+              )}
+            </p>
+          </div>
+        ))}
+      </div>
+    </details>
   );
 }

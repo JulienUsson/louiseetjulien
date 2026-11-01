@@ -15,6 +15,7 @@ import { isSameVenue, normalizeCode } from "@/lib/code-format";
 import { LODGINGS, type GuestType, type Lodging } from "@/lib/constants";
 import { prisma } from "@/lib/db";
 import { capitalize, formatDate, getSettings } from "@/lib/settings";
+import { joinNames } from "@/lib/templates";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +39,14 @@ export default async function GuestPage({
     guest.type === "COCKTAIL" ? "COCKTAIL" : "FULL"
   ) satisfies GuestType;
   const isCocktail = guestType === "COCKTAIL";
+
+  // Dès qu'on connaît les accompagnants, la page s'adresse à tout le monde.
+  const plural = guest.companions.length > 0;
+  const p = (singular: string, many: string) => (plural ? many : singular);
+  const names = joinNames([
+    guest.firstName,
+    ...guest.companions.map((companion) => companion.firstName),
+  ]);
 
   const infos = await prisma.infoPost.findMany({
     where: {
@@ -79,8 +88,8 @@ export default async function GuestPage({
           </h1>
           <div className="w-16 h-px bg-orange-300 mx-auto my-6" />
           <p className="font-sans text-muted-foreground">
-            Bonjour {guest.firstName}, on serait vraiment heureux de t&apos;avoir
-            avec nous.
+            Bonjour {names}, on serait vraiment heureux de{" "}
+            {p("t'avoir", "vous avoir")} avec nous.
           </p>
         </header>
 
@@ -89,8 +98,14 @@ export default async function GuestPage({
             <CardTitle className="font-serif text-xl">Le jour J</CardTitle>
             <CardDescription>
               {isCocktail
-                ? "Tu es convié·e au vin d'honneur, juste après la cérémonie laïque."
-                : "Cérémonie laïque, vin d'honneur, dîner et soirée : on t'attend pour toute la journée."}
+                ? p(
+                    "Tu es convié·e au vin d'honneur, juste après la cérémonie laïque.",
+                    "Vous êtes conviés au vin d'honneur, juste après la cérémonie laïque.",
+                  )
+                : p(
+                    "Cérémonie laïque, vin d'honneur, dîner et soirée : on t'attend pour toute la journée.",
+                    "Cérémonie laïque, vin d'honneur, dîner et soirée : on vous attend pour toute la journée.",
+                  )}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -111,7 +126,10 @@ export default async function GuestPage({
                 place={settings.mairiePlace}
                 address={settings.mairieAddress}
                 coords={settings.mairieCoords}
-                note="Un moment plus intime — dis-nous plus bas si tu veux en être."
+                note={p(
+                  "Un moment plus intime — dis-nous plus bas si tu veux en être.",
+                  "Un moment plus intime — dites-nous plus bas si vous voulez en être.",
+                )}
               />
             )}
 
@@ -191,11 +209,19 @@ export default async function GuestPage({
 
         <Card id="rsvp">
           <CardHeader>
-            <CardTitle className="font-serif text-xl">Ta réponse</CardTitle>
+            <CardTitle className="font-serif text-xl">
+              {p("Ta réponse", "Votre réponse")}
+            </CardTitle>
             <CardDescription>
               {guest.respondedAt
-                ? "Tu as déjà répondu — tu peux modifier ta réponse quand tu veux."
-                : "Confirme-nous ta présence, et laisse ton email pour recevoir les informations."}
+                ? p(
+                    "Tu as déjà répondu — tu peux modifier ta réponse quand tu veux.",
+                    "Vous avez déjà répondu — vous pouvez modifier votre réponse quand vous voulez.",
+                  )
+                : p(
+                    "Confirme-nous ta présence, et laisse ton email pour recevoir les informations.",
+                    "Confirmez-nous votre présence, et laissez votre email pour recevoir les informations.",
+                  )}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -209,6 +235,7 @@ export default async function GuestPage({
                   : "à la mairie"
               }
               askLodging={!isCocktail}
+              plural={plural}
               defaultValues={{
                 email: guest.email ?? "",
                 phone: guest.phone ?? "",
@@ -233,7 +260,7 @@ export default async function GuestPage({
 
         {settings.contactEmail && (
           <p className="text-center text-sm text-muted-foreground">
-            Une question ? Écris-nous à{" "}
+            Une question ? {p("Écris-nous", "Écrivez-nous")} à{" "}
             <a
               className="text-rose-600 underline underline-offset-4"
               href={`mailto:${settings.contactEmail}`}

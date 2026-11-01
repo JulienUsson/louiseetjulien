@@ -160,8 +160,12 @@ export default async function GuestsPage({
                       <CopyMessageButton
                         label="Message"
                         message={invitationMessage({
+                          template: settings.invitationMessage,
                           coupleNames: settings.coupleNames,
-                          firstName: guest.firstName,
+                          names: [
+                            guest.firstName,
+                            ...guest.companions.map((companion) => companion.firstName),
+                          ],
                           url: guestUrl(guest.code),
                           weddingDateLabel,
                         })}

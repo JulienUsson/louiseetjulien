@@ -28,6 +28,32 @@ export const SETTING_DEFAULTS = {
   rsvpDeadline: "",
   contactEmail: "",
   contactPhone: "",
+
+  invitationEmailSubject: "{couple} — {tu es invité·e|vous êtes invités} !",
+  invitationEmailTitle: "{Tu es invité·e|Vous êtes invités} !",
+  invitationEmailBody: [
+    "Bonjour {prenoms},",
+    "",
+    "Nous nous marions le {date} et nous serions très heureux de {t'avoir|vous avoir} avec nous.",
+    "",
+    "Voici {ton|votre} lien personnel. {Tu y retrouveras|Vous y retrouverez} toutes les informations pratiques et {tu pourras|vous pourrez} nous confirmer {ta|votre} présence :",
+    "",
+    "{lien}",
+    "",
+    "Ce lien n'est qu'à {toi|vous} : merci de ne pas le transmettre.",
+  ].join("\n"),
+  invitationMessage: [
+    "Bonjour {prenoms} !",
+    "",
+    "Nous nous marions le {date} et on serait vraiment heureux de {t'avoir|vous avoir} avec nous.",
+    "",
+    "Voici {ton|votre} lien personnel : {tu y retrouveras|vous y retrouverez} toutes les infos pratiques et {tu pourras|vous pourrez} nous confirmer {ta|votre} présence.",
+    "{lien}",
+    "",
+    "Ce lien n'est qu'à {toi|vous}, merci de ne pas le transmettre.",
+    "",
+    "{couple}",
+  ].join("\n"),
 } as const;
 
 export type SettingKey = keyof typeof SETTING_DEFAULTS;
@@ -74,7 +100,9 @@ export type SettingField = {
   key: SettingKey;
   label: string;
   help?: string;
-  type?: "text" | "date" | "email";
+  type?: "text" | "date" | "email" | "textarea";
+  /** Gabarit à variables : le formulaire en affiche un aperçu. */
+  template?: boolean;
 };
 
 export type SettingGroup = {
@@ -140,6 +168,36 @@ export const SETTING_GROUPS: SettingGroup[] = [
     fields: [
       { key: "contactEmail", label: "Email de contact", type: "email" },
       { key: "contactPhone", label: "Téléphone de contact" },
+    ],
+  },
+  {
+    title: "Invitation",
+    description:
+      "{prenoms} est remplacé par le prénom de l'invité et de ses accompagnants connus, {couple}, {date} et {lien} par le nom du couple, la date du mariage et le lien personnel. {singulier|pluriel} choisit le texte selon que l'invitation concerne une personne ou plusieurs, par exemple {t'avoir|vous avoir}.",
+    fields: [
+      {
+        key: "invitationEmailSubject",
+        label: "Objet de l'email",
+        template: true,
+      },
+      {
+        key: "invitationEmailTitle",
+        label: "Titre de l'email",
+        template: true,
+      },
+      {
+        key: "invitationEmailBody",
+        label: "Texte de l'email",
+        type: "textarea",
+        template: true,
+        help: "Le lien seul sur sa ligne devient un bouton. La signature est ajoutée automatiquement.",
+      },
+      {
+        key: "invitationMessage",
+        label: "Message à copier (SMS, WhatsApp…)",
+        type: "textarea",
+        template: true,
+      },
     ],
   },
 ];
