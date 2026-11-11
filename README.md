@@ -58,6 +58,10 @@ Chaque information publiée cible une audience (`ALL`, `FULL` ou `COCKTAIL`) :
 elle n'apparaît que sur la page des invités concernés, et la diffusion par
 email suit la même règle.
 
+La date limite de réponse peut aussi différer : les invités au vin d'honneur
+ont leur propre date, plus tardive, réglable à part. Vide, ils reprennent celle
+des invités à la journée complète.
+
 ## La journée et ses lieux
 
 Trois lieux, configurés dans `/admin/reglages` : la **mairie**, la **cérémonie

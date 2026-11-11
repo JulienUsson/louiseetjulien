@@ -26,6 +26,7 @@ export const SETTING_DEFAULTS = {
   receptionCoords: "",
 
   rsvpDeadline: "",
+  rsvpDeadlineCocktail: "",
   contactEmail: "",
   contactPhone: "",
 
@@ -123,7 +124,13 @@ export const SETTING_GROUPS: SettingGroup[] = [
         key: "rsvpDeadline",
         label: "Date limite de réponse",
         type: "date",
-        help: "Rappelée sur la page de chaque invité",
+        help: "Rappelée sur la page des invités à la journée complète",
+      },
+      {
+        key: "rsvpDeadlineCocktail",
+        label: "Date limite de réponse (vin d'honneur)",
+        type: "date",
+        help: "Pour les invités au vin d'honneur. Vide : même date que ci-dessus",
       },
     ],
   },
