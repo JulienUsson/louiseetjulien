@@ -57,7 +57,11 @@ export default async function GuestPage({
   });
 
   const dateLabel = capitalize(formatDate(settings.weddingDate));
-  const deadlineLabel = capitalize(formatDate(settings.rsvpDeadline));
+  const deadlineLabel = capitalize(
+    formatDate(
+      (isCocktail && settings.rsvpDeadlineCocktail) || settings.rsvpDeadline,
+    ),
+  );
   const hasMairie = Boolean(settings.mairiePlace || settings.mairieAddress);
 
   // Quand la réception se tient là où a lieu la cérémonie laïque, on n'affiche
