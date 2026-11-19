@@ -145,6 +145,18 @@ recopiable à la main depuis un carton papier ou un SMS.
 Le bouton « Régénérer le lien » d'une fiche invité invalide immédiatement
 l'ancien lien — utile si un code a circulé par erreur.
 
+## Suivre les réponses
+
+La liste des invités se filtre par réponse, formule, mairie, logement et email,
+et se trie par nom ou par date de réponse (« Dernières réponses ») pour voir
+qui vient de répondre. Les cartes du tableau de bord mènent à la liste filtrée
+correspondante.
+
+La page `/admin/reponses` récapitule les réponses des présents : les musiques
+demandées, des plus récentes aux plus anciennes, et le logement choisi, avec
+pour chaque option les invités, leurs accompagnants et le nombre de personnes
+(dont les enfants).
+
 ## Emails
 
 L'envoi est actif dès que `SMTP_HOST` est renseigné. Sans configuration SMTP,
