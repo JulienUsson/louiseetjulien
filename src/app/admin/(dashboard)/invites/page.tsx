@@ -20,11 +20,23 @@ import {
 import { guestUrl } from "@/lib/codes";
 import { GUEST_TYPE_LABELS, type GuestType } from "@/lib/constants";
 import { prisma } from "@/lib/db";
-import { guestFiltersWhere, parseGuestFilters } from "@/lib/guest-filters";
+import {
+  guestFiltersWhere,
+  guestListOrder,
+  parseGuestFilters,
+} from "@/lib/guest-filters";
 import { invitationMessage } from "@/lib/invitation-message";
 import { formatDate, getSettings } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
+
+const respondedAtFormat = new Intl.DateTimeFormat("fr-FR", {
+  day: "numeric",
+  month: "short",
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: "Europe/Paris",
+});
 
 export default async function GuestsPage({
   searchParams,
@@ -36,7 +48,7 @@ export default async function GuestsPage({
   const [guests, total, settings] = await Promise.all([
     prisma.guest.findMany({
       where: guestFiltersWhere(filters),
-      orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+      orderBy: guestListOrder(filters),
       include: {
         companions: {
           orderBy: { createdAt: "asc" },
@@ -150,6 +162,11 @@ export default async function GuestsPage({
                   </TableCell>
                   <TableCell>
                     <RsvpBadge attending={guest.attending} />
+                    {guest.respondedAt && (
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        {respondedAtFormat.format(guest.respondedAt)}
+                      </div>
+                    )}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">

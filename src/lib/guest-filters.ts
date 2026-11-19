@@ -46,6 +46,13 @@ export const GUEST_FILTERS = {
       aucun: "Non précisé",
     },
   },
+  tri: {
+    label: "Par nom",
+    allLabel: "Par nom",
+    options: {
+      reponse: "Dernières réponses",
+    },
+  },
   email: {
     label: "Email",
     allLabel: "Avec ou sans email",
@@ -99,6 +106,18 @@ export function guestFiltersWhere(
   if (filters.email === "sans") where.push({ email: null });
 
   return { AND: where };
+}
+
+export function guestListOrder(
+  filters: GuestFilters,
+): Prisma.GuestOrderByWithRelationInput[] {
+  const byName: Prisma.GuestOrderByWithRelationInput[] = [
+    { lastName: "asc" },
+    { firstName: "asc" },
+  ];
+  return filters.tri === "reponse"
+    ? [{ respondedAt: { sort: "desc", nulls: "last" } }, ...byName]
+    : byName;
 }
 
 export function guestListHref(filters: GuestFilters = {}): string {
