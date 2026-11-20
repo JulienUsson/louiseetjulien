@@ -11,14 +11,13 @@ import { prisma } from "@/lib/db";
 import {
   customEmail,
   infoEmail,
-  invitationEmail,
+  guestEmail,
   testEmail,
 } from "@/lib/email-templates";
 import { geocodeAddress } from "@/lib/geocode";
 import { sendMail } from "@/lib/mail";
 import {
   SETTING_DEFAULTS,
-  formatDate,
   getSettings,
   saveSettings,
   type SettingKey,
@@ -302,36 +301,75 @@ export async function importGuests(
 type InvitableGuest = {
   id: string;
   firstName: string;
+  type: string;
   code: string;
   email: string | null;
   companions: { firstName: string }[];
 };
 
-/** Envoi du lien d'invitation à un invité déjà chargé. */
+/** Envoi du lien d'invitation (ou d'une relance) à un invité déjà chargé. */
 async function sendInvitationTo(
   guest: InvitableGuest,
+  kind: "invitation" | "reminder" = "invitation",
+  settings?: Settings,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   if (!guest.email) {
     return { ok: false, error: "Cet invité n'a pas encore d'adresse email." };
   }
 
-  const settings = await getSettings();
-  const email = invitationEmail({
-    settings,
-    names: [
-      guest.firstName,
-      ...guest.companions.map((companion) => companion.firstName),
-    ],
-    url: guestUrl(guest.code),
-    weddingDateLabel: formatDate(settings.weddingDate),
-  });
+  const email = guestEmail(
+    settings ?? (await getSettings()),
+    kind,
+    guest,
+    guestUrl(guest.code),
+  );
 
   return sendMail({
     ...email,
     to: guest.email,
-    kind: "INVITATION",
+    kind: kind === "invitation" ? "INVITATION" : "REMINDER",
     guestId: guest.id,
   });
+}
+
+/**
+ * Relance par email ceux des invités donnés qui n'ont toujours pas répondu et
+ * ont renseigné une adresse.
+ */
+export async function sendReminders(
+  guestIds: string[],
+): Promise<ActionResult> {
+  await requireAdmin();
+
+  const guests = await prisma.guest.findMany({
+    where: { id: { in: guestIds }, attending: null, email: { not: null } },
+    include: { companions: { orderBy: { createdAt: "asc" } } },
+  });
+
+  if (guests.length === 0) {
+    return fail("Aucun de ces invités sans réponse n'a d'adresse email.");
+  }
+
+  const settings = await getSettings();
+  let sent = 0;
+  let firstError: string | undefined;
+
+  for (const guest of guests) {
+    const result = await sendInvitationTo(guest, "reminder", settings);
+    if (result.ok) sent++;
+    else firstError ??= result.error;
+  }
+
+  revalidatePath("/admin/emails");
+
+  if (sent === 0) return fail(firstError ?? "Aucune relance n'a pu partir.");
+
+  return {
+    ok: true,
+    message: `Relance envoyée à ${sent} invité(s)${
+      firstError ? ` — ${guests.length - sent} en échec : ${firstError}` : ""
+    }.`,
+  };
 }
 
 export async function sendInvitation(guestId: string): Promise<ActionResult> {

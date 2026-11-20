@@ -35,6 +35,10 @@ model Guest {
   /// Notes privées côté back-office, jamais affichées à l'invité.
   notes String?
 
+  /// Première ouverture du lien par l'invité (les visites des mariés, connectés
+  /// au back-office, ne comptent pas).
+  firstSeenAt DateTime?
+
   // --- Réponse de l'invité ---
   attending   Boolean?
   respondedAt DateTime?

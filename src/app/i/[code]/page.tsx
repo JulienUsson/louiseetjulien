@@ -14,7 +14,13 @@ import {
 import { isSameVenue, normalizeCode } from "@/lib/code-format";
 import { LODGINGS, type GuestType, type Lodging } from "@/lib/constants";
 import { prisma } from "@/lib/db";
-import { capitalize, formatDate, getSettings } from "@/lib/settings";
+import { isAuthenticated } from "@/lib/auth";
+import {
+  capitalize,
+  deadlineFor,
+  formatDate,
+  getSettings,
+} from "@/lib/settings";
 import { joinNames } from "@/lib/templates";
 
 export const dynamic = "force-dynamic";
@@ -33,6 +39,15 @@ export default async function GuestPage({
   });
 
   if (!guest) notFound();
+
+  // On note la première visite de l'invité, pas celles des mariés qui
+  // prévisualisent sa page depuis le back-office.
+  if (!guest.firstSeenAt && !(await isAuthenticated())) {
+    await prisma.guest.update({
+      where: { id: guest.id },
+      data: { firstSeenAt: new Date() },
+    });
+  }
 
   const settings = await getSettings();
   const guestType = (
@@ -58,9 +73,7 @@ export default async function GuestPage({
 
   const dateLabel = capitalize(formatDate(settings.weddingDate));
   const deadlineLabel = capitalize(
-    formatDate(
-      (isCocktail && settings.rsvpDeadlineCocktail) || settings.rsvpDeadline,
-    ),
+    formatDate(deadlineFor(settings, guestType)),
   );
   const hasMairie = Boolean(settings.mairiePlace || settings.mairieAddress);
 

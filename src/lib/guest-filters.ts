@@ -46,11 +46,12 @@ export const GUEST_FILTERS = {
       aucun: "Non précisé",
     },
   },
-  tri: {
-    label: "Par nom",
-    allLabel: "Par nom",
+  lien: {
+    label: "Lien",
+    allLabel: "Lien ouvert ou non",
     options: {
-      reponse: "Dernières réponses",
+      ouvert: "Lien ouvert",
+      jamais: "Lien jamais ouvert",
     },
   },
   email: {
@@ -59,6 +60,13 @@ export const GUEST_FILTERS = {
     options: {
       avec: "Avec email",
       sans: "Sans email",
+    },
+  },
+  tri: {
+    label: "Par nom",
+    allLabel: "Par nom",
+    options: {
+      reponse: "Dernières réponses",
     },
   },
 } as const satisfies Record<
@@ -101,6 +109,9 @@ export function guestFiltersWhere(
 
   if (filters.logement === "aucun") where.push({ lodging: null });
   else if (filters.logement) where.push({ lodging: filters.logement });
+
+  if (filters.lien === "ouvert") where.push({ firstSeenAt: { not: null } });
+  if (filters.lien === "jamais") where.push({ firstSeenAt: null });
 
   if (filters.email === "avec") where.push({ email: { not: null } });
   if (filters.email === "sans") where.push({ email: null });

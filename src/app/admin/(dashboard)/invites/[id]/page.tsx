@@ -28,8 +28,8 @@ import {
   type Lodging,
 } from "@/lib/constants";
 import { prisma } from "@/lib/db";
-import { invitationMessage } from "@/lib/invitation-message";
-import { formatDate, getSettings } from "@/lib/settings";
+import { guestMessage } from "@/lib/invitation-message";
+import { getSettings } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 
@@ -129,16 +129,7 @@ export default async function GuestDetailPage({
               <CopyLinkButton url={url} variant="outline" />
               <CopyMessageButton
                 variant="outline"
-                message={invitationMessage({
-                  template: settings.invitationMessage,
-                  coupleNames: settings.coupleNames,
-                  names: [
-                    guest.firstName,
-                    ...guest.companions.map((companion) => companion.firstName),
-                  ],
-                  url,
-                  weddingDateLabel: formatDate(settings.weddingDate),
-                })}
+                message={guestMessage(settings, "invitationMessage", guest, url)}
               />
               <Button asChild variant="ghost" size="sm">
                 <a href={url} target="_blank" rel="noopener noreferrer">
@@ -151,6 +142,30 @@ export default async function GuestDetailPage({
                 hasEmail={Boolean(guest.email)}
               />
             </div>
+            {guest.attending === null && (
+              <div className="space-y-2 border-t pt-4">
+                <p className="text-sm text-muted-foreground">
+                  Pas encore de réponse : une relance rappelle sa date limite.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <CopyMessageButton
+                    variant="outline"
+                    label="Copier la relance"
+                    message={guestMessage(
+                      settings,
+                      "reminderMessage",
+                      guest,
+                      url,
+                    )}
+                  />
+                  <SendInvitationButton
+                    guestId={guest.id}
+                    hasEmail={Boolean(guest.email)}
+                    reminder
+                  />
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -171,6 +186,15 @@ export default async function GuestDetailPage({
             </Field>
             <Field label="Accompagnants autorisés">
               {guest.maxCompanions}
+            </Field>
+            <Field label="Lien ouvert">
+              {guest.firstSeenAt ? (
+                `le ${dateTimeFormat.format(guest.firstSeenAt)}`
+              ) : (
+                <span className="text-muted-foreground">
+                  Jamais par l&apos;invité
+                </span>
+              )}
             </Field>
             {guest.notes && (
               <Field label="Notes privées">

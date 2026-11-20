@@ -1,11 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { z } from "zod";
 
 import { normalizeCode } from "@/lib/code-format";
 import { LODGINGS } from "@/lib/constants";
 import { prisma } from "@/lib/db";
+import { notifyResponse } from "@/lib/notifications";
 
 const companionSchema = z.object({
   firstName: z.string().trim().min(1).max(80),
@@ -90,6 +92,10 @@ export async function submitRsvp(input: RsvpInput): Promise<RsvpState> {
       },
     }),
   ]);
+
+  // L'email aux mariés part après la réponse : l'invité n'attend pas le SMTP.
+  const firstAnswer = guest.respondedAt === null;
+  after(() => notifyResponse(guest.id, firstAnswer));
 
   revalidatePath(`/i/${code}`);
   return { ok: true };

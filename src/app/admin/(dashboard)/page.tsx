@@ -40,6 +40,7 @@ export default async function DashboardPage() {
         attendingMairie: true,
         lodging: true,
         email: true,
+        firstSeenAt: true,
         _count: { select: { companions: true } },
       },
     }),
@@ -49,6 +50,9 @@ export default async function DashboardPage() {
   const yes = guests.filter((guest) => guest.attending === true);
   const no = guests.filter((guest) => guest.attending === false).length;
   const pending = guests.filter((guest) => guest.attending === null).length;
+  const neverOpened = guests.filter(
+    (guest) => guest.attending === null && !guest.firstSeenAt,
+  ).length;
   const withoutEmail = guests.filter((guest) => !guest.email).length;
 
   // Un accompagnant suit la formule de l'invité qui l'a déclaré.
@@ -101,6 +105,7 @@ export default async function DashboardPage() {
           icon={<CircleHelp className="size-5 text-orange-500" />}
           label="Sans réponse"
           value={pending}
+          hint={`${neverOpened} n'ont jamais ouvert leur lien`}
           href={guestListHref({ reponse: "attente" })}
         />
         <StatCard

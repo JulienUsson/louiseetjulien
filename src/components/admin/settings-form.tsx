@@ -247,6 +247,7 @@ function TemplatePreview({
                   prenoms: joinNames(names),
                   couple: settings.coupleNames,
                   date: formatDate(settings.weddingDate),
+                  limite: formatDate(settings.rsvpDeadline),
                   lien: "https://…/i/ABCD1234",
                 },
                 names.length > 1,

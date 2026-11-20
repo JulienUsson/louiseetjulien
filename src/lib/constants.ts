@@ -40,12 +40,20 @@ export const AUDIENCE_LABELS: Record<Audience, string> = {
   COCKTAIL: "Vin d'honneur uniquement",
 };
 
-export const EMAIL_KINDS = ["INVITATION", "INFO", "TEST"] as const;
+export const EMAIL_KINDS = [
+  "INVITATION",
+  "REMINDER",
+  "INFO",
+  "NOTIFICATION",
+  "TEST",
+] as const;
 export type EmailKind = (typeof EMAIL_KINDS)[number];
 
 export const EMAIL_KIND_LABELS: Record<EmailKind, string> = {
   INVITATION: "Lien d'invitation",
+  REMINDER: "Relance",
   INFO: "Information",
+  NOTIFICATION: "Notification de réponse",
   TEST: "Test",
 };
 

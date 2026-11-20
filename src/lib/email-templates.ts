@@ -1,7 +1,15 @@
 import "server-only";
 
-import { SETTING_DEFAULTS, type Settings } from "@/lib/settings-fields";
-import { joinNames, renderTemplate } from "@/lib/templates";
+import {
+  SETTING_DEFAULTS,
+  type SettingKey,
+  type Settings,
+} from "@/lib/settings-fields";
+import {
+  guestTemplateValues,
+  renderTemplate,
+  type TemplateGuest,
+} from "@/lib/templates";
 
 const ROSE = "#e11d48";
 const ORANGE = "#f97316";
@@ -99,44 +107,34 @@ function button(href: string, label: string): string {
 
 export type RenderedEmail = { subject: string; text: string; html: string };
 
-export function invitationEmail(params: {
-  settings: Pick<
-    Settings,
-    | "coupleNames"
-    | "invitationEmailSubject"
-    | "invitationEmailTitle"
-    | "invitationEmailBody"
-  >;
-  names: string[];
-  url: string;
-  weddingDateLabel: string;
-}): RenderedEmail {
-  const { settings, names, url, weddingDateLabel } = params;
-  const plural = names.length > 1;
-  const render = (template: string, fallback: string) =>
-    renderTemplate(
-      template || fallback,
-      {
-        prenoms: joinNames(names),
-        couple: settings.coupleNames,
-        date: weddingDateLabel,
-        lien: url,
-      },
-      plural,
-    ).trim();
+const GUEST_EMAIL_KEYS = {
+  invitation: {
+    subject: "invitationEmailSubject",
+    title: "invitationEmailTitle",
+    body: "invitationEmailBody",
+  },
+  reminder: {
+    subject: "reminderEmailSubject",
+    title: "reminderEmailTitle",
+    body: "reminderEmailBody",
+  },
+} as const satisfies Record<string, Record<string, SettingKey>>;
 
-  const subject = render(
-    settings.invitationEmailSubject,
-    SETTING_DEFAULTS.invitationEmailSubject,
-  );
-  const title = render(
-    settings.invitationEmailTitle,
-    SETTING_DEFAULTS.invitationEmailTitle,
-  );
-  const body = render(
-    settings.invitationEmailBody,
-    SETTING_DEFAULTS.invitationEmailBody,
-  );
+/** Email d'invitation ou de relance, rédigé depuis les gabarits des réglages. */
+export function guestEmail(
+  settings: Settings,
+  kind: keyof typeof GUEST_EMAIL_KEYS,
+  guest: TemplateGuest,
+  url: string,
+): RenderedEmail {
+  const { values, plural } = guestTemplateValues(settings, guest, url);
+  const render = (key: SettingKey) =>
+    renderTemplate(settings[key] || SETTING_DEFAULTS[key], values, plural).trim();
+
+  const keys = GUEST_EMAIL_KEYS[kind];
+  const subject = render(keys.subject);
+  const title = render(keys.title);
+  const body = render(keys.body);
 
   const blocks = body.split(/\n{2,}/);
   const hasLinkBlock = blocks.some((block) => block.trim() === url);
@@ -164,6 +162,52 @@ export function invitationEmail(params: {
       ),
       ...(hasLinkBlock ? [] : [linkBlock]),
     ].join(""),
+  });
+
+  return { subject, text, html };
+}
+
+/** Prévient les mariés qu'un invité vient de répondre. */
+export function responseNotificationEmail(params: {
+  coupleNames: string;
+  guestName: string;
+  firstAnswer: boolean;
+  attending: boolean;
+  details: [label: string, value: string][];
+  url: string;
+}): RenderedEmail {
+  const { coupleNames, guestName, firstAnswer, attending, details, url } =
+    params;
+  const verdict = attending ? "présent" : "absent";
+  const subject = `${guestName} ${
+    firstAnswer ? "a répondu" : "a modifié sa réponse"
+  } : ${verdict}`;
+
+  const text = [
+    `${subject}.`,
+    "",
+    ...details.map(([label, value]) => `${label} : ${value}`),
+    "",
+    `Fiche de l'invité : ${url}`,
+  ].join("\n");
+
+  const rows = details
+    .map(
+      ([label, value]) =>
+        `<tr><td style="padding:4px 12px 4px 0;color:#a08d86;font-size:13px;vertical-align:top;white-space:nowrap;">${escapeHtml(
+          label,
+        )}</td><td style="padding:4px 0;color:${INK};font-size:14px;">${escapeHtml(
+          value,
+        ).replace(/\n/g, "<br />")}</td></tr>`,
+    )
+    .join("");
+
+  const html = layout({
+    coupleNames,
+    title: subject,
+    content: `
+      <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;">${rows}</table>
+      ${button(url, "Voir la fiche")}`,
   });
 
   return { subject, text, html };
