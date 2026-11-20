@@ -6,6 +6,7 @@ import { GuestDialog } from "@/components/admin/guest-dialog";
 import { GuestFiltersBar } from "@/components/admin/guest-filters";
 import { GuestImportDialog } from "@/components/admin/guest-import-dialog";
 import { CopyLinkButton } from "@/components/admin/copy-link-button";
+import { RemindAllButton } from "@/components/admin/remind-all-button";
 import { RsvpBadge } from "@/components/admin/rsvp-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,8 +26,8 @@ import {
   guestListOrder,
   parseGuestFilters,
 } from "@/lib/guest-filters";
-import { invitationMessage } from "@/lib/invitation-message";
-import { formatDate, getSettings } from "@/lib/settings";
+import { guestMessage } from "@/lib/invitation-message";
+import { getSettings } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 
@@ -65,7 +66,12 @@ export default async function GuestsPage({
     getSettings(),
   ]);
 
-  const weddingDateLabel = formatDate(settings.weddingDate);
+  // Filtrer les sans-réponse, c'est préparer une relance : le message copié
+  // devient la relance, et un envoi groupé par email est proposé.
+  const reminding = filters.reponse === "attente";
+  const remindable = reminding
+    ? guests.filter((guest) => guest.email).map((guest) => guest.id)
+    : [];
 
   return (
     <div className="space-y-6">
@@ -86,6 +92,17 @@ export default async function GuestsPage({
       </div>
 
       {total > 0 && <GuestFiltersBar filters={filters} />}
+
+      {reminding && guests.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-orange-50/60 p-4 text-sm">
+          <p className="text-muted-foreground">
+            {remindable.length} sur {guests.length} ont renseigné leur email.
+            Pour les autres, le bouton « Relance » copie le message à envoyer
+            par SMS.
+          </p>
+          <RemindAllButton guestIds={remindable} />
+        </div>
+      )}
 
       {total === 0 ? (
         <div className="rounded-lg border border-dashed p-12 text-center">
@@ -162,9 +179,15 @@ export default async function GuestsPage({
                   </TableCell>
                   <TableCell>
                     <RsvpBadge attending={guest.attending} />
-                    {guest.respondedAt && (
+                    {guest.respondedAt ? (
                       <div className="mt-1 text-xs text-muted-foreground">
                         {respondedAtFormat.format(guest.respondedAt)}
+                      </div>
+                    ) : (
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        {guest.firstSeenAt
+                          ? `Lien ouvert le ${respondedAtFormat.format(guest.firstSeenAt)}`
+                          : "Lien jamais ouvert"}
                       </div>
                     )}
                   </TableCell>
@@ -175,17 +198,13 @@ export default async function GuestsPage({
                         label="Lien"
                       />
                       <CopyMessageButton
-                        label="Message"
-                        message={invitationMessage({
-                          template: settings.invitationMessage,
-                          coupleNames: settings.coupleNames,
-                          names: [
-                            guest.firstName,
-                            ...guest.companions.map((companion) => companion.firstName),
-                          ],
-                          url: guestUrl(guest.code),
-                          weddingDateLabel,
-                        })}
+                        label={reminding ? "Relance" : "Message"}
+                        message={guestMessage(
+                          settings,
+                          reminding ? "reminderMessage" : "invitationMessage",
+                          guest,
+                          guestUrl(guest.code),
+                        )}
                       />
                       <Button asChild variant="ghost" size="sm">
                         <a

@@ -133,7 +133,8 @@ qu'une adresse est connue — utile pour ceux créés sans email.
 
 Le texte du message et celui de l'email d'invitation (objet, titre, corps) se
 modifient dans `/admin/reglages`, avec un aperçu. Variables : `{prenoms}`
-(l'invité et ses accompagnants connus), `{couple}`, `{date}` et `{lien}` ;
+(l'invité et ses accompagnants connus), `{couple}`, `{date}`, `{limite}` et
+`{lien}` ;
 `{singulier|pluriel}` choisit le texte selon que l'invitation concerne une
 personne ou plusieurs, par exemple `{t'avoir|vous avoir}`. Dans l'email, le
 lien seul sur sa ligne devient un bouton.
@@ -152,10 +153,35 @@ et se trie par nom ou par date de réponse (« Dernières réponses ») pour voi
 qui vient de répondre. Les cartes du tableau de bord mènent à la liste filtrée
 correspondante.
 
-La page `/admin/reponses` récapitule les réponses des présents : les musiques
-demandées, des plus récentes aux plus anciennes, et le logement choisi, avec
-pour chaque option les invités, leurs accompagnants et le nombre de personnes
-(dont les enfants).
+La page `/admin/reponses` récapitule les réponses des présents, accompagnants
+compris :
+
+- **Repas** : effectifs par formule (dont les enfants) et liste des allergies
+  et régimes. « Exporter (CSV) » télécharge une ligne par personne présente,
+  à ouvrir dans un tableur pour le traiteur ou le plan de table.
+- **Mairie** : qui y assiste, et combien.
+- **Logement** : pour chaque option, les invités, leurs accompagnants et le
+  nombre de personnes.
+- **Musiques** demandées, des plus récentes aux plus anciennes.
+- **Petits mots** laissés par les invités, présents ou non.
+
+Chaque réponse d'un invité (première réponse ou modification) déclenche un
+email aux mariés avec son détail, envoyé à l'« Email des mariés » des réglages
+ou, à défaut, à l'email de contact. Il faut que le SMTP soit configuré.
+
+La première ouverture de son lien par un invité est enregistrée ; les visites
+des mariés connectés au back-office ne comptent pas. La liste l'affiche pour
+les invités sans réponse et se filtre sur « Lien jamais ouvert », et le
+tableau de bord en donne le nombre.
+
+## Relancer les retardataires
+
+Filtrer la liste sur « Sans réponse » prépare la relance : le bouton du
+message copie alors la relance plutôt que l'invitation, et « Relancer par
+email » l'envoie d'un coup à ceux qui ont renseigné leur email. La fiche d'un
+invité sans réponse propose les mêmes actions. Le texte de la relance se
+modifie dans les réglages ; `{limite}` y donne la date limite propre à chaque
+invité (celle du vin d'honneur peut différer).
 
 ## Emails
 
@@ -163,10 +189,11 @@ L'envoi est actif dès que `SMTP_HOST` est renseigné. Sans configuration SMTP,
 l'application fonctionne normalement mais aucun email ne part : chaque
 tentative est journalisée dans `/admin/emails` avec sa raison d'échec.
 
-Quatre types d'envois : le lien d'invitation (à la création de l'invité, à
-l'import, ou depuis sa fiche), la diffusion d'une information publiée, un
-message libre ciblé, et un email de test pour valider la configuration avant la
-première vraie campagne.
+Plusieurs types d'envois : le lien d'invitation (à la création de l'invité, à
+l'import, ou depuis sa fiche), la relance des invités sans réponse, la
+diffusion d'une information publiée, un message libre ciblé, la notification
+des mariés à chaque réponse, et un email de test pour valider la configuration
+avant la première vraie campagne.
 
 Le message libre se compose depuis `/admin/emails` et se cible par formule et
 par état de réponse — pour relancer les silencieux, ou n'écrire qu'aux
@@ -342,7 +369,8 @@ service, la décompresser (`gunzip mariage-AAAA-MM-JJ.db.gz`) à la place de
 
 - `Guest` — un invité = une invitation = un lien. Porte le code, le type,
   l'email (renseigné par l'invité), la réponse, la présence à la mairie, le
-  logement, la musique souhaitée et le nombre d'accompagnants autorisés.
+  logement, la musique souhaitée, le nombre d'accompagnants autorisés et la
+  date de première ouverture du lien.
 - `Companion` — les accompagnants, renseignés par les mariés quand ils les
   connaissent ou déclarés par l'invité.
 - `InfoPost` — une information, son audience et son état de publication.

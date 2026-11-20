@@ -11,6 +11,7 @@ export {
   SETTING_GROUPS,
   VENUES,
   capitalize,
+  deadlineFor,
   formatDate,
   osmEmbedUrl,
   osmLinkUrl,

@@ -19,8 +19,13 @@ export function generateCode(length = CODE_LENGTH): string {
   return code;
 }
 
+/** URL absolue d'une page du site, pour les liens envoyés par mail ou SMS. */
+export function appUrl(path: string, baseUrl = process.env.APP_URL): string {
+  const base = (baseUrl ?? "http://localhost:3000").replace(/\/+$/, "");
+  return `${base}${path}`;
+}
+
 /** URL absolue de la page d'un invité, à envoyer par mail ou par SMS. */
 export function guestUrl(code: string, baseUrl = process.env.APP_URL): string {
-  const base = (baseUrl ?? "http://localhost:3000").replace(/\/+$/, "");
-  return `${base}/i/${code}`;
+  return appUrl(`/i/${code}`, baseUrl);
 }

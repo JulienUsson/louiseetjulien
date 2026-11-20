@@ -29,6 +29,7 @@ export const SETTING_DEFAULTS = {
   rsvpDeadlineCocktail: "",
   contactEmail: "",
   contactPhone: "",
+  notificationEmail: "",
 
   invitationEmailSubject: "{couple} — {tu es invité·e|vous êtes invités} !",
   invitationEmailTitle: "{Tu es invité·e|Vous êtes invités} !",
@@ -52,6 +53,28 @@ export const SETTING_DEFAULTS = {
     "{lien}",
     "",
     "Ce lien n'est qu'à {toi|vous}, merci de ne pas le transmettre.",
+    "",
+    "{couple}",
+  ].join("\n"),
+
+  reminderEmailSubject: "{couple} — petit rappel",
+  reminderEmailTitle: "Petit rappel",
+  reminderEmailBody: [
+    "Bonjour {prenoms},",
+    "",
+    "Nous n'avons pas encore reçu {ta|votre} réponse pour notre mariage du {date}. {Peux-tu|Pouvez-vous} nous dire avant le {limite} si {tu seras|vous serez} des nôtres ?",
+    "",
+    "Tout se passe sur {ton|votre} lien personnel :",
+    "",
+    "{lien}",
+    "",
+    "Merci, et à très vite !",
+  ].join("\n"),
+  reminderMessage: [
+    "Coucou {prenoms} !",
+    "",
+    "Petit rappel pour notre mariage du {date} : {peux-tu|pouvez-vous} nous dire avant le {limite} si {tu seras|vous serez} des nôtres ? Tout se passe ici :",
+    "{lien}",
     "",
     "{couple}",
   ].join("\n"),
@@ -178,9 +201,20 @@ export const SETTING_GROUPS: SettingGroup[] = [
     ],
   },
   {
+    title: "Notifications",
+    fields: [
+      {
+        key: "notificationEmail",
+        label: "Email des mariés",
+        type: "email",
+        help: "Reçoit un email à chaque réponse d'un invité. Vide : l'email de contact.",
+      },
+    ],
+  },
+  {
     title: "Invitation",
     description:
-      "{prenoms} est remplacé par le prénom de l'invité et de ses accompagnants connus, {couple}, {date} et {lien} par le nom du couple, la date du mariage et le lien personnel. {singulier|pluriel} choisit le texte selon que l'invitation concerne une personne ou plusieurs, par exemple {t'avoir|vous avoir}.",
+      "{prenoms} est remplacé par le prénom de l'invité et de ses accompagnants connus, {couple}, {date}, {limite} et {lien} par le nom du couple, la date du mariage, la date limite de réponse de l'invité et son lien personnel. {singulier|pluriel} choisit le texte selon que l'invitation concerne une personne ou plusieurs, par exemple {t'avoir|vous avoir}.",
     fields: [
       {
         key: "invitationEmailSubject",
@@ -207,7 +241,48 @@ export const SETTING_GROUPS: SettingGroup[] = [
       },
     ],
   },
+  {
+    title: "Relance",
+    description:
+      "Pour les invités qui n'ont pas encore répondu. Mêmes variables que l'invitation.",
+    fields: [
+      {
+        key: "reminderEmailSubject",
+        label: "Objet de l'email",
+        template: true,
+      },
+      {
+        key: "reminderEmailTitle",
+        label: "Titre de l'email",
+        template: true,
+      },
+      {
+        key: "reminderEmailBody",
+        label: "Texte de l'email",
+        type: "textarea",
+        template: true,
+        help: "Le lien seul sur sa ligne devient un bouton. La signature est ajoutée automatiquement.",
+      },
+      {
+        key: "reminderMessage",
+        label: "Message à copier (SMS, WhatsApp…)",
+        type: "textarea",
+        template: true,
+      },
+    ],
+  },
 ];
+
+/** Date limite de réponse d'un invité : celle du vin d'honneur peut différer. */
+export function deadlineFor(
+  settings: Pick<Settings, "rsvpDeadline" | "rsvpDeadlineCocktail">,
+  type: string,
+): string {
+  return (
+    (type === "COCKTAIL" && settings.rsvpDeadlineCocktail) ||
+    settings.rsvpDeadline
+  );
+}
 
 /** Formate une date ISO (YYYY-MM-DD) en français, ou "" si vide/invalide. */
 export function formatDate(iso: string, withWeekday = true): string {

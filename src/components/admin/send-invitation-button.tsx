@@ -4,15 +4,18 @@ import { useTransition } from "react";
 import { Loader2, Send } from "lucide-react";
 import { toast } from "sonner";
 
-import { sendInvitation } from "@/app/admin/actions";
+import { sendInvitation, sendReminders } from "@/app/admin/actions";
 import { Button } from "@/components/ui/button";
 
 export function SendInvitationButton({
   guestId,
   hasEmail,
+  reminder = false,
 }: {
   guestId: string;
   hasEmail: boolean;
+  /** Envoie la relance plutôt que l'invitation. */
+  reminder?: boolean;
 }) {
   const [pending, startTransition] = useTransition();
 
@@ -28,8 +31,10 @@ export function SendInvitationButton({
       }
       onClick={() =>
         startTransition(async () => {
-          const result = await sendInvitation(guestId);
-          if (result.ok) toast.success(result.message ?? "Invitation envoyée.");
+          const result = reminder
+            ? await sendReminders([guestId])
+            : await sendInvitation(guestId);
+          if (result.ok) toast.success(result.message ?? "Email envoyé.");
           else toast.error(result.error ?? "Envoi impossible.");
         })
       }
@@ -39,7 +44,7 @@ export function SendInvitationButton({
       ) : (
         <Send className="size-4" />
       )}
-      Envoyer par email
+      {reminder ? "Relancer par email" : "Envoyer par email"}
     </Button>
   );
 }
